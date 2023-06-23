@@ -1,4 +1,12 @@
-import {NodeVisitor, TextNode, FormattedTextNode, HorizontalRuleNode, ParagraphNode, ListNode, BreakNode } from './deps.ts'
+import {
+  BreakNode,
+  FormattedTextNode,
+  HorizontalRuleNode,
+  ListNode,
+  NodeVisitor,
+  ParagraphNode,
+  TextNode,
+} from "./deps.ts";
 
 export class FixedWidthTextVisitor extends NodeVisitor {
   private width: number;
@@ -12,27 +20,31 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.lazyLines = [];
     this.breakLazy = false;
   }
+
   protected text(node: TextNode): void {
     this.pushText(node.text);
   }
+
   protected formattedText(node: FormattedTextNode): void {
+    this.pushBlockContentBegin();
     for (const line of node.text.split("\n")) {
       this.pushLine();
       this.pushText(line);
     }
+    this.pushBlockContentEnd();
   }
 
   // deno-lint-ignore no-unused-vars
   protected horizontalRule(node: HorizontalRuleNode): void {
     this.pushBlockContentBegin();
-    this.pushText('-'.repeat(this.width));
+    this.pushText("-".repeat(this.width));
     this.pushBlockContentEnd();
   }
 
   // deno-lint-ignore no-unused-vars
   protected break_(node: BreakNode): void {
     if (this.breakLazy) {
-      this.lazyLines.push('');
+      this.lazyLines.push("");
     }
     this.breakLazy = true;
   }
@@ -45,23 +57,23 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
   protected list(node: ListNode): void {
     this.pushBlockContentBegin();
-    if (node.style == 'ordered') {
+    if (node.style == "ordered") {
       let counter = 0;
       for (const item of node.content) {
         counter++;
         const counterText = `${counter}`;
         const widthOffset = 4 + counterText.length;
         const visitor = new FixedWidthTextVisitor(this.width - widthOffset);
-        visitor.visit({type: 'array', content: item.content});
+        visitor.visit({ type: "array", content: item.content });
         const lines = visitor.getLines();
         for (let i = 0; i < lines.length; i++) {
           if (i == 0) {
             this.lines.push(`  ${counterText}. ${lines[0]}`);
           } else {
-            if (lines[i] == '') {
-              this.lines.push('');
+            if (lines[i] == "") {
+              this.lines.push("");
             } else {
-              this.lines.push(' '.repeat(widthOffset) + lines[i]);
+              this.lines.push(" ".repeat(widthOffset) + lines[i]);
             }
           }
         }
@@ -69,13 +81,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     } else {
       for (const item of node.content) {
         const visitor = new FixedWidthTextVisitor(this.width - 5);
-        visitor.visit({type: 'array', content: item.content});
+        visitor.visit({ type: "array", content: item.content });
         const lines = visitor.getLines();
         for (let i = 0; i < lines.length; i++) {
           if (i == 0) {
-            this.lines.push('  *  ' + lines[0]);
+            this.lines.push("  *  " + lines[0]);
           } else {
-            this.lines.push('     ' + lines[i]);
+            this.lines.push("     " + lines[i]);
           }
         }
       }
@@ -88,25 +100,28 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     if (this.lines.length > 0) {
       // Clear last line conditionally
       this.pushEndOfLineIfAnyContent();
-      const [line1, line2] = this.lines.slice(this.lines.length - 2, this.lines.length);
-      if (line1 != '') {
+      const [line1, line2] = this.lines.slice(
+        this.lines.length - 2,
+        this.lines.length,
+      );
+      if (line1 != "") {
         this.pushLine();
       }
-      if (line2 != '') {
+      if (line2 != "") {
         this.pushLine();
       }
     }
   }
 
   private pushBlockContentEnd() {
-    this.lazyLines.push('');
+    this.lazyLines.push("");
   }
   private pushLazyLines() {
     if (this.lazyLines.length > 0) {
       this.pushEndOfLineIfAnyContent();
     }
     if (this.breakLazy) {
-      this.lines.push('');
+      this.lines.push("");
     }
     for (const line of this.lazyLines) {
       this.lines.push(line);
@@ -115,37 +130,37 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.breakLazy = false;
   }
   private pushEndOfLineIfAnyContent() {
-    if (this.getLastLine() != '') {
+    if (this.getLastLine() != "") {
       this.pushLine();
     }
   }
   private getLastLine() {
     if (this.lines.length == 0) {
-      return '';
+      return "";
     }
     return this.lines[this.lines.length - 1];
   }
   private pushText(text: string) {
     this.pushLazyLines();
     let index = this.lines.length - 1;
-    let line : string;
+    let line: string;
     if (index >= 0) {
       line = this.lines[index];
     } else {
-      line = '';
+      line = "";
       index = 0;
     }
 
     let sliceStart = 0;
     do {
-      if (line == '') {
+      if (line == "") {
         // skip white space
         while (true) {
           const nextChar = text.slice(sliceStart, sliceStart + 1);
-          if (nextChar == '') {
+          if (nextChar == "") {
             break;
           }
-          if (nextChar == ' ') {
+          if (nextChar == " ") {
             sliceStart++;
           } else {
             break;
@@ -161,7 +176,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           const char = slice.charAt(index);
           if (char && char.match(/[ =\-_\/\\\n\r\t]/)) {
             sliceEnd -= i;
-            slice = text.slice(sliceStart, sliceEnd)
+            slice = text.slice(sliceStart, sliceEnd);
             break;
           }
         }
@@ -174,7 +189,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       } else {
         this.lines[index] = line + slice;
         sliceStart = sliceEnd;
-        if (nextChar == '') {
+        if (nextChar == "") {
           break;
         }
       }
@@ -187,14 +202,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   }
   private pushLine() {
     const lastIndex = this.lines.length - 1;
-    if (lastIndex >= 0 && this.lines[lastIndex].endsWith(' ')) {
+    if (lastIndex >= 0 && this.lines[lastIndex].endsWith(" ")) {
       const line = this.lines[lastIndex];
       this.lines[lastIndex] = line.trimEnd();
     }
     this.lines.push("");
   }
-  public getLines() : readonly string[] {
+  public getLines(): readonly string[] {
     return this.lines;
   }
 }
-
