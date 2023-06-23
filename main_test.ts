@@ -77,3 +77,260 @@ Deno.test({name: 'Break long urls', fn() {
     'confirm_flipper_inc_is_now_in/'
   ]);
 }});
+
+Deno.test({name: 'Styling is ignored', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'text', text: 'Lorem ipsum dolor sit amet, '},
+      {type: 'italic', content: [
+        {type: 'text', text: 'consectetur.'}
+      ]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet, consectetur.',
+  ]);
+}});
+
+Deno.test({name: 'Spaces are not forgotten 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'text', text: 'Lorem ipsum dolor sit amet, '},
+      {type: 'text', text: 'consectetur.'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet, consectetur.',
+  ]);
+}});
+
+Deno.test({name: 'Spaces are not forgotten 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'text', text: 'Lorem ipsum dolor sit amet,'},
+      {type: 'text', text: ' consectetur.'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet, consectetur.',
+  ]);
+}});
+
+Deno.test({name: 'Explicit Break 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'text', text: 'Lorem ipsum dolor sit amet,'},
+      {type: 'break'},
+      {type: 'text', text: ' consectetur.'},
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet,',
+    'consectetur.',
+  ]);
+}});
+
+Deno.test({name: 'Explicit Break 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'text', text: 'Lorem ipsum dolor sit amet.'},
+      {type: 'break'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet.'
+  ]);
+}});
+
+Deno.test({name: 'Explicit Break 3', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'break'},
+      {type: 'text', text: 'Lorem ipsum dolor sit amet.'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet.'
+  ]);
+}});
+
+Deno.test({name: 'Explicit Break 4', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'text', text: 'Lorem ipsum dolor sit amet,'},
+      {type: 'break'},
+      {type: 'break'},
+      {type: 'text', text: 'consectetur.'},
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet,',
+    '',
+    '',
+    'consectetur.'
+  ]);
+}});
+
+Deno.test({name: 'Horizontal Rules', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet,'}]},
+      {type: 'horizontal-rule'},
+      {type: 'paragraph', content: [{type: 'text', text: ' consectetur.'}]},
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet,',
+    '',
+    '----------------------------------------',
+    '',
+    'consectetur.',
+  ]);
+}});
+
+Deno.test({name: 'First and only paragraph does not add blank lines', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'paragraph', content: [
+        {type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}
+      ]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet, consectetur',
+    'adipiscing elit, sed do eiusmod tempor',
+    'incididunt ut labore et dolore magna',
+    'aliqua.',
+  ]);
+}});
+
+Deno.test({name: 'Paragraphs have lines between', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'paragraph', content: [
+        {type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}
+      ]},
+      {type: 'paragraph', content: [
+        {type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}
+      ]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet, consectetur',
+    'adipiscing elit, sed do eiusmod tempor',
+    'incididunt ut labore et dolore magna',
+    'aliqua.',
+    '',
+    'Lorem ipsum dolor sit amet, consectetur',
+    'adipiscing elit, sed do eiusmod tempor',
+    'incididunt ut labore et dolore magna',
+    'aliqua.',
+  ]);
+}});
+
+Deno.test({name: 'Paragraphs and horizontal rule have lines between', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'paragraph', content: [
+        {type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}
+      ]},
+      {type: 'horizontal-rule'},
+      {type: 'paragraph', content: [
+        {type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}
+      ]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet, consectetur',
+    'adipiscing elit, sed do eiusmod tempor',
+    'incididunt ut labore et dolore magna',
+    'aliqua.',
+    '',
+    '----------------------------------------',
+    '',
+    'Lorem ipsum dolor sit amet, consectetur',
+    'adipiscing elit, sed do eiusmod tempor',
+    'incididunt ut labore et dolore magna',
+    'aliqua.',
+  ]);
+}});
+
+Deno.test({name: 'Numbered list', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'list', style: 'ordered', content: [
+        {type: 'list-item', content: [
+          {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet,'}]},
+          {type: 'horizontal-rule'},
+          {type: 'paragraph', content: [{type: 'text', text: ' consectetur.'}]},
+        ]},
+        {type: 'list-item', content: [
+          {type: 'text', text: 'https://cendyne.dev/posts/2023-06-20-twitters-bot-problem-is-getting-weird-with-chatgpt.html'},
+        ]}
+      ]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    '  1. Lorem ipsum dolor sit amet,',
+    '',
+    '     -----------------------------------',
+    '',
+    '     consectetur.',
+    '  2. https://cendyne.dev/posts/2023-06-',
+    '     20-twitters-bot-problem-is-getting-',
+    '     weird-with-chatgpt.html',
+  ]);
+}});
+
+
+Deno.test({name: 'Unordered list', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'list', style: 'unordered', content: [
+        {type: 'list-item', content: [
+          {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}]},
+        ]},
+        {type: 'list-item', content: [
+          {type: 'text', text: 'KRUGKIDROVUWG2ZAMJZG653OEBTG66BANJ2W24DTEBXXMZLSEB2GQZJANRQXU6JAMRXWOLQ'},
+        ]}
+      ]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    '  *  Lorem ipsum dolor sit amet,',
+    '     consectetur adipiscing elit, sed do',
+    '     eiusmod tempor incididunt ut labore',
+    '     et dolore magna aliqua.',
+    '  *  KRUGKIDROVUWG2ZAMJZG653OEBTG66BANJ2',
+    '     W24DTEBXXMZLSEB2GQZJANRQXU6JAMRXWOL',
+    '     Q',
+  ]);
+}});
+
+
