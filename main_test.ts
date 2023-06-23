@@ -334,3 +334,85 @@ Deno.test({name: 'Unordered list', fn() {
 }});
 
 
+Deno.test({name: 'Columns 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'columns',
+    'column-count': 1,
+    columns: [
+      [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}]
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor sit amet, consectetur',
+    'adipiscing elit, sed do eiusmod tempor',
+    'incididunt ut labore et dolore magna',
+    'aliqua.',
+  ]);
+}});
+
+Deno.test({name: 'Columns 2 - 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'columns',
+    'column-count': 2,
+    columns: [
+      [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}],
+      [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}]
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor    Lorem ipsum dolor',
+    'sit amet,            sit amet,',
+    'consectetur          consectetur',
+    'adipiscing elit,     adipiscing elit,',
+    'sed do eiusmod       sed do eiusmod',
+    'tempor incididunt    tempor incididunt',
+    'ut labore et dolore  ut labore et dolore',
+    'magna aliqua.        magna aliqua.',
+  ]);
+}});
+
+Deno.test({name: 'Columns 2 - 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'columns',
+    'column-count': 2,
+    columns: [
+      [{type: 'text', text: 'Hello world'}],
+      [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}]
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Hello world          Lorem ipsum dolor',
+    '                     sit amet,',
+    '                     consectetur',
+    '                     adipiscing elit,',
+    '                     sed do eiusmod',
+    '                     tempor incididunt',
+    '                     ut labore et dolore',
+    '                     magna aliqua.',
+  ]);
+}});
+
+Deno.test({name: 'Columns 2 - 3', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'columns',
+    'column-count': 2,
+    columns: [
+      [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}],
+      [{type: 'text', text: 'Hello world'}]
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor    Hello world',
+    'sit amet,',
+    'consectetur',
+    'adipiscing elit,',
+    'sed do eiusmod',
+    'tempor incididunt',
+    'ut labore et dolore',
+    'magna aliqua.',
+  ]);
+}});
