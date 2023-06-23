@@ -99,20 +99,18 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   protected columns(node: ColumnsNode): void {
     const count = node["column-count"];
     if (count == 1) {
-      this.visit({type: 'array', content: node.columns[0]});
+      this.visit({ type: "array", content: node.columns[0] });
       return;
     }
     let consumedWidth = 0;
     const generalWidth = Math.floor((this.width - ((count - 1) * 2)) / count);
-    let columns = [];
+    const columns = [];
     let maxLines = 0;
     for (let i = 0; i < count; i++) {
       if (i > 0) {
         consumedWidth += 2;
       }
-      const width = i == count - 1
-        ? this.width - consumedWidth
-        : generalWidth;
+      const width = i == count - 1 ? this.width - consumedWidth : generalWidth;
 
       const visitor = new FixedWidthTextVisitor(width);
       visitor.visit({ type: "array", content: node.columns[i] });
@@ -125,13 +123,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
     this.pushBlockContentBegin();
     for (let i = 0; i < maxLines; i++) {
-      let line = '';
+      let line = "";
       for (let j = 0; j < count; j++) {
         if (j > 0) {
-          line += '  ';
+          line += "  ";
         }
-        const colLine = columns[j][i] || '';
-        line += colLine + ' '.repeat(generalWidth - colLine.length);
+        const colLine = columns[j][i] || "";
+        line += colLine + " ".repeat(generalWidth - colLine.length);
       }
       this.lines.push(line.trimEnd());
     }
