@@ -1,0 +1,18 @@
+{
+  "version": "2",
+  "remote": {
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/ArrayCollapseTransformer.ts": "a801aa4c40485916f497fb4f2b484661d530f9a17fdea11b1da4dd04c255d54b",
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/IdentityTransformer.ts": "520af002abd04ac961a9bd116733e44bcfa39eed00b1240277b97286c3dbe712",
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/NodeVisitor.ts": "d8b61d3b443f7402e4297274f49940d6aa8f48513f812408f387a150ef440fd9",
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/TextCollapseTransformer.ts": "a6885685d9bc272feec3720d45a00259fd3beb324f5149c440c5c487cb84dec7",
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/TextVisitor.ts": "056535d90d07caa53f0cead883f6a5448b9113b6ee5455d8303b835a77b679da",
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/WhitespaceStretchingTransformer.ts": "43f4ac911f7993f9d57e05fe8075a6b7f1cf791758ac0c2dfc044e3be412146d",
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/WhitespaceTransformer.ts": "52898abcdc8960f7ee78eef9a643f74bc9f1478a4ba8d63868e674211242f660",
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/index.ts": "fa581be60c32f0fe94fbb2df44c3dcbe0eb512a8cfe19233bd7e688c3fa5152b",
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/types.ts": "5b05bc6e24436a84e09f477b612e8c66932c809f88f5c3e345e272140fae18b4",
+    "https://deno.land/std@0.192.0/fmt/colors.ts": "d67e3cd9f472535241a8e410d33423980bec45047e343577554d3356e1f0ef4e",
+    "https://deno.land/std@0.192.0/testing/_diff.ts": "1a3c044aedf77647d6cac86b798c6417603361b66b54c53331b312caeb447aea",
+    "https://deno.land/std@0.192.0/testing/_format.ts": "a69126e8a469009adf4cf2a50af889aca364c349797e63174884a52ff75cf4c7",
+    "https://deno.land/std@0.192.0/testing/asserts.ts": "e16d98b4d73ffc4ed498d717307a12500ae4f2cbe668f1a215632d19fcffc22f"
+  }
+}
