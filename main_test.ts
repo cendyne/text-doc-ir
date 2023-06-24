@@ -1329,7 +1329,7 @@ Deno.test({
           type: "text",
           text:
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-        }
+        },
       ],
     });
     assertEquals(visitor.getLines(), [
@@ -1377,16 +1377,16 @@ Deno.test({
       type: "high-tech-alert",
       warning: [
         {
-          type: 'text',
-          text: 'Lorem ipsum dolor sit amet'
-        }
+          type: "text",
+          text: "Lorem ipsum dolor sit amet",
+        },
       ],
       content: [
         {
           type: "text",
           text:
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-        }
+        },
       ],
     });
     assertEquals(visitor.getLines(), [
@@ -1397,7 +1397,7 @@ Deno.test({
       "| consectetur adipiscing elit, sed do  |",
       "| eiusmod tempor incididunt ut labore  |",
       "| et dolore magna aliqua.              |",
-      "\\--------------------------------------/"
+      "\\--------------------------------------/",
     ]);
   },
 });
@@ -1440,7 +1440,7 @@ Deno.test({
     const visitor = new FixedWidthTextVisitor(40);
     visitor.visit({
       type: "bubble",
-      orientation: 'left',
+      orientation: "left",
       content: [
         {
           type: "paragraph",
@@ -1469,7 +1469,7 @@ Deno.test({
     const visitor = new FixedWidthTextVisitor(40);
     visitor.visit({
       type: "bubble",
-      orientation: 'right',
+      orientation: "right",
       content: [
         {
           type: "paragraph",
@@ -1491,4 +1491,3 @@ Deno.test({
     ]);
   },
 });
-

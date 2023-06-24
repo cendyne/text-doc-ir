@@ -452,10 +452,11 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     });
     for (const line of visitor.getLines()) {
       this.pushEndOfLineIfAnyContent();
-      if (node.orientation == 'left') {
+      if (node.orientation == "left") {
         this.lines[Math.max(0, this.lines.length - 1)] = "| " + line;
-      } else if (node.orientation == 'right') {
-        this.lines[Math.max(0, this.lines.length - 1)] = " ".repeat(this.width - 2 - line.length) + line  + " |";
+      } else if (node.orientation == "right") {
+        this.lines[Math.max(0, this.lines.length - 1)] =
+          " ".repeat(this.width - 2 - line.length) + line + " |";
       }
     }
     this.pushBlockContentEnd();
