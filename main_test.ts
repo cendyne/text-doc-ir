@@ -1591,7 +1591,6 @@ Deno.test({
   },
 });
 
-
 Deno.test({
   name: "Sticker Center",
   fn() {
@@ -1599,13 +1598,13 @@ Deno.test({
     visitor.visit({
       type: "card",
       header: {
-        type: 'card-header',
-        title: [{type: 'text', text: 'Cendyne'}],
-        username: 'cendyne',
-        usernameDomain: 'furry.engineer'
+        type: "card-header",
+        title: [{ type: "text", text: "Cendyne" }],
+        username: "cendyne",
+        usernameDomain: "furry.engineer",
       },
       content: {
-        type: 'card-content',
+        type: "card-content",
         content: [
           {
             type: "paragraph",
@@ -1617,22 +1616,22 @@ Deno.test({
               },
             ],
           },
-        ]
+        ],
       },
       media: {
-        type: 'card-media',
+        type: "card-media",
         content: [{
-          type: 'image',
-          url: 'https://e.example/e',
-          alt: 'Demo Image'
-        }]
+          type: "image",
+          url: "https://e.example/e",
+          alt: "Demo Image",
+        }],
       },
       attribution: {
-        type: 'card-attribution',
-        title: [{type: 'text', text: 'Example Attribution Title'}],
-        url: 'https://e.example/e',
-        date: '2023-06-24T17:14:53+00:00'
-      }
+        type: "card-attribution",
+        title: [{ type: "text", text: "Example Attribution Title" }],
+        url: "https://e.example/e",
+        date: "2023-06-24T17:14:53+00:00",
+      },
     });
     assertEquals(visitor.getLines(), [
       "/--------------------------------------\\",
@@ -1648,6 +1647,53 @@ Deno.test({
       "| Example Attribution Title [L1] 6/24/ |",
       "| 2023                                 |",
       "\\--------------------------------------/",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Document - 1",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "document",
+      title: "Example Title",
+      url: "/example",
+      content: [
+        { type: "text", text: "Lorem " },
+        {
+          type: "link",
+          url:
+            "https://cendyne.dev/posts/2023-06-20-twitters-bot-problem-is-getting-weird-with-chatgpt.json",
+          content: [{
+            type: "text",
+            text: "ipsum dolor",
+          }],
+        },
+        { type: "text", text: "sit amet." },
+        {
+          type: "image",
+          alt: "Example Image",
+          url:
+            "https://media.tech.lgbt/media_attachments/files/110/588/972/540/677/028/original/b962a00b667e6b0b.png",
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "             Example Title",
+      "----------------------------------------",
+      "",
+      "Lorem ipsum dolor [L1] sit amet.",
+      "[I1: Example Image]",
+      "",
+      "----------------------------------------",
+      " [L1]: https://cendyne.dev/posts/2023-06",
+      "       -20-twitters-bot-problem-is-",
+      "       getting-weird-with-chatgpt.json",
+      " [I1]: https://media.tech.lgbt/media_",
+      "       attachments/files/110/588/972/540",
+      "       /677/028/original/",
+      "       b962a00b667e6b0b.png",
     ]);
   },
 });

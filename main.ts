@@ -6,6 +6,7 @@ import {
   CardNode,
   CenterNode,
   ColumnsNode,
+  DocumentNode,
   EmbedNode,
   EmojiNode,
   FigureImageNode,
@@ -30,8 +31,10 @@ import {
 
 interface TextVisitingState {
   images: Map<string, string>;
+  imagesReverse: Map<string, string>;
   imageCount: number;
   links: Map<string, string>;
+  linksReverse: Map<string, string>;
   linkCount: number;
   numericDepth: number;
 }
@@ -54,8 +57,10 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.breakCount = 0;
     this.state = {
       images: new Map(),
+      imagesReverse: new Map(),
       imageCount: 0,
       links: new Map(),
+      linksReverse: new Map(),
       linkCount: 0,
       numericDepth: 0,
     };
@@ -207,6 +212,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.state.linkCount++;
       key = `L${this.state.linkCount}`;
       this.state.links.set(node.url, key);
+      this.state.linksReverse.set(key, node.url);
     }
     this.spaceLazy = true;
     this.pushText(`[${key}]`);
@@ -221,6 +227,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.state.imageCount++;
       key = `I${this.state.imageCount}`;
       this.state.images.set(node.url, key);
+      this.state.imagesReverse.set(key, node.url);
     }
     this.pushBlockContentBegin();
     this.pushText(`[${key}: `);
@@ -528,8 +535,16 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         type: "center",
         content: [
           ...node.header.title,
-          ...(node.header.username && [{type:'text', text: ` @${node.header.username}`} as TextNode] || []),
-          ...(node.header.username && [{type:'text', text: `@${node.header.usernameDomain}`} as TextNode] || [])
+          ...(node.header.username &&
+              [{
+                type: "text",
+                text: ` @${node.header.username}`,
+              } as TextNode] || []),
+          ...(node.header.username &&
+              [{
+                type: "text",
+                text: `@${node.header.usernameDomain}`,
+              } as TextNode] || []),
         ],
       });
 
@@ -545,15 +560,14 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       }
     }
 
-
     const contentVisitor = new FixedWidthTextVisitor(this.width - 4);
     contentVisitor.setState({ ...this.state, numericDepth: 0 });
-    const content : Node[] = [
+    const content: Node[] = [
       ...(node.content && node.content.content || []),
-      ...(node.media && node.media.content || [])
-    ]
+      ...(node.media && node.media.content || []),
+    ];
     if (node.attribution) {
-      let date : Date | undefined;
+      let date: Date | undefined;
       if (node.attribution.date) {
         try {
           date = new Date(node.attribution.date);
@@ -562,29 +576,29 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         }
       }
       content.push({
-        type: 'paragraph',
+        type: "paragraph",
         content: [
           ...(node.attribution.title || []),
           ...(node.attribution.url && [{
-            type: 'link',
-            url: node.attribution.url,
-            content: []
-          } as LinkNode] || []),
+                type: "link",
+                url: node.attribution.url,
+                content: [],
+              } as LinkNode] || []),
           ...(node.attribution.archiveUrl && [{
-            type: 'link',
-            url: node.attribution.archiveUrl,
-            content: []
-          } as LinkNode] || []),
+                type: "link",
+                url: node.attribution.archiveUrl,
+                content: [],
+              } as LinkNode] || []),
           ...(date && [{
-            type: 'text',
-            text: date.toLocaleDateString()
-          }] as Node[] || [])
-        ]
-      })
+                type: "text",
+                text: date.toLocaleDateString(),
+              }] as Node[] || []),
+        ],
+      });
     }
     contentVisitor.visit({
       type: "array",
-      content
+      content,
     });
     for (const line of contentVisitor.getLines()) {
       this.pushEndOfLineIfAnyContent();
@@ -597,6 +611,75 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushText("-".repeat(this.width - 2));
     this.pushText("/");
     this.pushBlockContentEnd();
+  }
+
+  protected document(node: DocumentNode): void {
+    this.pushBlockContentBegin();
+    let date: Date | undefined;
+    try {
+      if (node["pub-date"]) {
+        date = new Date(node["pub-date"] * 1000);
+      }
+    } catch (_e) {
+      // Nothing
+    }
+    this.center({
+      type: "center",
+      content: [
+        { type: "text", text: node.title },
+        { type: "break" },
+        ...(date &&
+            [{ type: "text", text: date.toDateString() }, {
+              type: "break",
+            }] as Node[] || []),
+        ...(node.description &&
+            [{ type: "text", text: node.description }] as Node[] || []),
+        { type: "horizontal-rule" },
+      ],
+    });
+    super.document(node);
+    this.horizontalRule({ type: "horizontal-rule" });
+    if (this.state.linkCount > 0) {
+      const length = Math.max(7, `[L${this.state.linkCount}]: `.length);
+      for (let i = 1; i <= this.state.linkCount; i++) {
+        const label = `[L${i}]: `;
+        const visitor = new FixedWidthTextVisitor(this.width - length);
+        visitor.text({
+          "type": "text",
+          text: this.state.linksReverse.get(`L${i}`) || "",
+        });
+        let firstLine = true;
+        for (const line of visitor.getLines()) {
+          if (!firstLine) {
+            this.lines.push(" ".repeat(length) + line);
+          } else {
+            this.lines.push(" ".repeat(length - label.length) + label + line);
+            firstLine = false;
+          }
+        }
+      }
+    }
+
+    if (this.state.imageCount > 0) {
+      const length = Math.max(7, `[L${this.state.imageCount}]: `.length);
+      for (let i = 1; i <= this.state.imageCount; i++) {
+        const label = `[I${i}]: `;
+        const visitor = new FixedWidthTextVisitor(this.width - length);
+        visitor.text({
+          "type": "text",
+          text: this.state.imagesReverse.get(`I${i}`) || "",
+        });
+        let firstLine = true;
+        for (const line of visitor.getLines()) {
+          if (!firstLine) {
+            this.lines.push(" ".repeat(length) + line);
+          } else {
+            this.lines.push(" ".repeat(length - label.length) + label + line);
+            firstLine = false;
+          }
+        }
+      }
+    }
   }
 
   private counterToDepth(counter: number): string {

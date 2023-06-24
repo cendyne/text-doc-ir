@@ -6,6 +6,7 @@ export type {
   CardNode,
   CenterNode,
   ColumnsNode,
+  DocumentNode,
   EmbedNode,
   EmojiNode,
   FigureImageNode,
