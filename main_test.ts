@@ -626,3 +626,36 @@ Deno.test({name: 'Link - 2', fn() {
     'Lorem ipsum dolor [L1] sit [L2] amet.',
   ]);
 }})
+
+Deno.test({name: 'Video', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'text', text: 'Lorem '},
+      {type: 'video', poster: 'https://e.example/e', alt: 'aaa', mp4: 'https://e.example/e'},
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem',
+    '[I1: Video: aaa]',
+  ]);
+}});
+
+Deno.test({name: 'Youtube', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'text', text: 'Lorem '},
+      {type: 'embed', content: {
+        type: 'youtube',
+        id: 'aaaaaa'
+      }},
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem Youtube Video [L1]'
+  ]);
+}});
+

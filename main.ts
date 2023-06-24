@@ -2,6 +2,7 @@ import { encodeBase, LOWER_ALPHA, UPPER_ALPHA } from "./baseEncoder.ts";
 import {
   BreakNode,
   ColumnsNode,
+  EmbedNode,
   EmojiNode,
   FigureImageNode,
   FormattedTextNode,
@@ -12,6 +13,7 @@ import {
   NodeVisitor,
   ParagraphNode,
   TextNode,
+  VideoNode,
 } from "./deps.ts";
 
 interface TextVisitingState {
@@ -208,7 +210,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     this.pushBlockContentBegin();
     this.pushText(`[${key}: `);
-    this.pushText(node.alt.replaceAll(/[\n\r\t]/g, " "));
+    this.pushText((node.alt || "unspecified").replaceAll(/[\n\r\t]/g, " "));
     this.pushText("]");
     this.pushBlockContentEnd();
   }
@@ -224,7 +226,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     this.pushBlockContentBegin();
     this.pushText(`[${key}: `);
-    this.pushText(node.alt.replaceAll(/[\n\r\t]/g, " "));
+    this.pushText((node.alt || "unspecified").replaceAll(/[\n\r\t]/g, " "));
     this.pushText("]");
     this.pushBlockContentEnd();
     this.visit({
@@ -243,8 +245,28 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.state.images.set(node.url, key);
     }
     this.spaceLazy = true;
-    this.pushText(`[${key}: ${node.alt.replaceAll(/[\n\r\t]/g, " ")}]`);
+    this.pushText(
+      `[${key}: ${(node.alt || "unspecified").replaceAll(/[\n\r\t]/g, " ")}]`,
+    );
     this.spaceLazy = true;
+  }
+
+  protected video(node: VideoNode): void {
+    this.image({
+      type: "image",
+      url: node.poster,
+      alt: `Video: ${node.alt || "unspecified"}`,
+    });
+  }
+
+  protected embed(node: EmbedNode): void {
+    if (node.content.type == "youtube") {
+      this.link({
+        type: "link",
+        url: `https://youtu.be/${node.content.id}`,
+        content: [{ type: "text", text: "Youtube Video" }],
+      });
+    }
   }
 
   private counterToDepth(counter: number): string {
