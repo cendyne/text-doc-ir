@@ -277,7 +277,7 @@ Deno.test({name: 'Paragraphs and horizontal rule have lines between', fn() {
   ]);
 }});
 
-Deno.test({name: 'Numbered list', fn() {
+Deno.test({name: 'Numbered list - 1', fn() {
   const visitor = new FixedWidthTextVisitor(40);
   visitor.visit({
     type: 'array',
@@ -300,9 +300,60 @@ Deno.test({name: 'Numbered list', fn() {
     '     -----------------------------------',
     '',
     '     consectetur.',
+    '',
     '  2. https://cendyne.dev/posts/2023-06-',
     '     20-twitters-bot-problem-is-getting-',
     '     weird-with-chatgpt.html',
+  ]);
+}});
+
+Deno.test({name: 'Numbered list - 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'list', style: 'ordered', content: [
+        {type: 'list-item', content: [
+          {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing eli.'}]},
+          {type: 'list', style: 'ordered', content: [
+            {type: 'list-item', content: [
+              {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing eli.'}]},
+              {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing eli.'}]},
+              {type: 'list', style: 'ordered', content: [
+                {type: 'list-item', content: [
+                  {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing eli.'}]},
+                  {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing eli.'}]}
+                ]}
+              ]}
+            ]}
+          ]}
+        ]},
+        {type: 'list-item', content: [
+          {type: 'paragraph', content: [{type: 'text', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing eli.'}]}
+        ]}
+      ]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    '  1. Lorem ipsum dolor sit amet,',
+    '     consectetur adipiscing eli.',
+    '',
+    '       A. Lorem ipsum dolor sit amet,',
+    '          consectetur adipiscing eli.',
+    '',
+    '          Lorem ipsum dolor sit amet,',
+    '          consectetur adipiscing eli.',
+    '',
+    '            a. Lorem ipsum dolor sit',
+    '               amet, consectetur',
+    '               adipiscing eli.',
+    '',
+    '               Lorem ipsum dolor sit',
+    '               amet, consectetur',
+    '               adipiscing eli.',
+    '',
+    '  2. Lorem ipsum dolor sit amet,',
+    '     consectetur adipiscing eli.',
   ]);
 }});
 

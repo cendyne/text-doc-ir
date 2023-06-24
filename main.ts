@@ -1,3 +1,4 @@
+import { LOWER_ALPHA, UPPER_ALPHA, encodeBase } from "./baseEncoder.ts";
 import {
   BreakNode,
   ColumnsNode,
@@ -9,17 +10,37 @@ import {
   TextNode,
 } from "./deps.ts";
 
+interface TextVisitingState {
+  imageSet: Set<string>;
+  images: Map<string, string>;
+  linkSet: Set<string>;
+  links: Map<string, string>;
+  numericDepth: number;
+}
+
 export class FixedWidthTextVisitor extends NodeVisitor {
   private width: number;
   private lines: string[];
   private lazyLines: string[];
   private breakLazy: boolean;
+  private state: TextVisitingState;
   constructor(width: number) {
     super();
     this.width = width;
     this.lines = [];
     this.lazyLines = [];
     this.breakLazy = false;
+    this.state = {
+      images: new Map(),
+      imageSet: new Set(),
+      links: new Map(),
+      linkSet: new Set(),
+      numericDepth: 0
+    };
+  }
+
+  private setState(state: TextVisitingState) {
+    this.state = state;
   }
 
   protected text(node: TextNode): void {
@@ -57,19 +78,29 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   }
 
   protected list(node: ListNode): void {
+    if (this.lines.length > 0) {
+      this.breakLazy = true;
+    }
+
+    this.lazyLines = [];
     this.pushBlockContentBegin();
+
     if (node.style == "ordered") {
       let counter = 0;
+      const widthOffset = 4 + this.counterToDepth(node.content.length).length;
       for (const item of node.content) {
         counter++;
-        const counterText = `${counter}`;
-        const widthOffset = 4 + counterText.length;
+        if (counter > 1) {
+          this.lines.push('')
+        }
+        const counterText = this.counterToDepth(counter);
         const visitor = new FixedWidthTextVisitor(this.width - widthOffset);
+        visitor.setState({...this.state, numericDepth: this.state.numericDepth + 1});
         visitor.visit({ type: "array", content: item.content });
         const lines = visitor.getLines();
         for (let i = 0; i < lines.length; i++) {
           if (i == 0) {
-            this.lines.push(`  ${counterText}. ${lines[0]}`);
+            this.lines.push(`${' '.repeat(widthOffset - counterText.length - 2)}${counterText}. ${lines[0]}`);
           } else {
             if (lines[i] == "") {
               this.lines.push("");
@@ -82,6 +113,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     } else {
       for (const item of node.content) {
         const visitor = new FixedWidthTextVisitor(this.width - 5);
+        visitor.setState({...this.state, numericDepth: 0});
         visitor.visit({ type: "array", content: item.content });
         const lines = visitor.getLines();
         for (let i = 0; i < lines.length; i++) {
@@ -113,6 +145,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       const width = i == count - 1 ? this.width - consumedWidth : generalWidth;
 
       const visitor = new FixedWidthTextVisitor(width);
+      visitor.setState({...this.state, numericDepth: 0});
       visitor.visit({ type: "array", content: node.columns[i] });
       const lines = visitor.getLines();
       columns.push(lines);
@@ -136,21 +169,22 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
+  private counterToDepth(counter : number): string {
+    const num = this.state.numericDepth % 3;
+    if (num == 0) {
+      return `${counter}`;
+    } else if (num == 1) {
+      return encodeBase(UPPER_ALPHA, counter, true);
+    } else {
+      return encodeBase(LOWER_ALPHA, counter, true);
+    }
+  }
+
   private pushBlockContentBegin() {
     this.pushLazyLines();
     if (this.lines.length > 0) {
       // Clear last line conditionally
       this.pushEndOfLineIfAnyContent();
-      const [line1, line2] = this.lines.slice(
-        this.lines.length - 2,
-        this.lines.length,
-      );
-      if (line1 != "") {
-        this.pushLine();
-      }
-      if (line2 != "") {
-        this.pushLine();
-      }
     }
   }
 
@@ -181,6 +215,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     return this.lines[this.lines.length - 1];
   }
+
   private pushText(text: string) {
     this.pushLazyLines();
     let index = this.lines.length - 1;
