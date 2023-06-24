@@ -843,3 +843,18 @@ Deno.test({name: 'Regression - 1', fn() {
   ]);
 }})
 
+Deno.test({name: 'Strike through', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'text', text: 'Lorem ipsum '},
+      {type: 'strike-through', content: [{type: 'text', text: 'dolor sit'}]},
+      {type: 'text', text: 'amet.'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum (Strike through: dolor sit)',
+    'amet.',
+  ]);
+}});

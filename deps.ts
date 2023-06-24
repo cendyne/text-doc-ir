@@ -12,6 +12,7 @@ export type {
   LinkNode,
   ListNode,
   ParagraphNode,
+  StrikeThroughNode,
   TextNode,
   VideoNode,
 } from "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/index.ts";

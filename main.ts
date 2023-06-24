@@ -13,6 +13,7 @@ import {
   ListNode,
   NodeVisitor,
   ParagraphNode,
+  StrikeThroughNode,
   TextNode,
   VideoNode,
 } from "./deps.ts";
@@ -284,22 +285,28 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       maxWidth = Math.min(this.width, line.length);
     }
     this.pushLine();
-    let border = '=';
+    let border = "=";
     if (node.level == 2) {
-      border = '-';
+      border = "-";
     } else if (node.level == 3) {
-      border = '^';
+      border = "^";
     } else if (node.level == 4) {
       border = '"';
     } else if (node.level == 5) {
-      border = '\'';
+      border = "'";
     } else if (node.level == 6) {
-      border = '`';
+      border = "`";
     }
 
     this.lines[this.lines.length - 1] = border.repeat(maxWidth);
     this.breakLazy = false;
-    this.lazyLines = ['']
+    this.lazyLines = [""];
+  }
+
+  protected strikeThrough(node: StrikeThroughNode): void {
+    this.pushText("(Strike through: ");
+    super.strikeThrough(node);
+    this.pushText(")");
   }
 
   private counterToDepth(counter: number): string {
@@ -341,7 +348,10 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     if (!newLines && this.spaceLazy && this.lines.length > 0) {
       const lastLine = this.getLastLine();
-      if (!lastLine.endsWith(" ") && lastLine.length < this.width && lastLine.length > 0) {
+      if (
+        !lastLine.endsWith(" ") && lastLine.length < this.width &&
+        lastLine.length > 0
+      ) {
         this.lines[this.lines.length - 1] += " ";
       }
     }
@@ -396,7 +406,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       let sliceEnd = sliceStart + this.width - line.length;
       let slice = text.slice(sliceStart, sliceEnd);
       const nextChar = text.slice(sliceEnd, sliceEnd + 1);
-      if (slice == '') {
+      if (slice == "") {
         break;
       } else if (nextChar && nextChar.match(/[a-zA-Z0-9\.\?,\]\)]/)) {
         let success = false;
@@ -414,7 +424,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         if (success) {
           this.lines[index] = line + slice;
           if (this.lines[index].length > this.width) {
-            console.log('oops 1')
+            console.log("oops 1");
           }
         } else {
           if (this.getLastLine().length > 0) {
