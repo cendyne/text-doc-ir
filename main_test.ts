@@ -467,3 +467,162 @@ Deno.test({name: 'Columns 2 - 3', fn() {
     'magna aliqua.',
   ]);
 }});
+
+
+Deno.test({name: 'Emoji - 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'text', text: 'Lorem ipsum dolor '},
+      {type: 'emoji', alt: 'oooh', url: 'https://e.example/e'},
+      {type: 'text', text: 'sit amet.'},
+      {type: 'emoji', alt: 'oooh', url: 'https://e.example/e'},
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor [I1: oooh] sit amet.',
+    '[I1: oooh]'
+  ]);
+}})
+
+Deno.test({name: 'Emoji - 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'emoji', alt: 'oooh', url: 'https://e.example/e'},
+      {type: 'emoji', alt: 'aaah', url: 'https://e.example/j'},
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    '[I1: oooh] [I2: aaah]'
+  ]);
+}})
+
+Deno.test({name: 'Image - 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'image', alt: 'oooh', url: 'https://e.example/e'},
+      {type: 'image', alt: 'oooh', url: 'https://e.example/e'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    '[I1: oooh]',
+    '',
+    '[I1: oooh]'
+  ]);
+}})
+
+Deno.test({name: 'Image - 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'image', alt: 'oooh', url: 'https://e.example/e'},
+      {type: 'image', alt: 'aaah', url: 'https://e.example/j'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    '[I1: oooh]',
+    '',
+    '[I2: aaah]'
+  ]);
+}})
+
+Deno.test({name: 'Figure Image - 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'figure-image',
+    alt: 'oooh',
+    url: 'https://e.example/e',
+    width: 620,
+    height: 920,
+    content: [
+      {type: 'text', text: 'Hello'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    '[I1: oooh]',
+    '',
+    'Hello'
+  ]);
+}})
+
+Deno.test({name: 'Figure Image - 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {
+        type: 'figure-image',
+        alt: 'oooh',
+        url: 'https://e.example/e',
+        width: 620,
+        height: 920,
+        content: [
+          {type: 'text', text: 'Hello'}
+        ]
+      },
+      {
+        type: 'figure-image',
+        alt: 'oooh',
+        url: 'https://e.example/e',
+        width: 620,
+        height: 920,
+        content: [
+          {type: 'text', text: 'Hello'}
+        ]
+      }
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    '[I1: oooh]',
+    '',
+    'Hello',
+    '',
+    '[I1: oooh]',
+    '',
+    'Hello'
+  ]);
+}})
+
+Deno.test({name: 'Link - 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'text', text: 'Lorem '},
+      {type: 'link', url: 'https://e.example/e', content: [{
+        type: 'text', text: 'ipsum dolor'
+      }]},
+      {type: 'text', text: 'sit amet.'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor [L1] sit amet.',
+  ]);
+}})
+
+Deno.test({name: 'Link - 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'paragraph',
+    content: [
+      {type: 'text', text: 'Lorem '},
+      {type: 'link', url: 'https://e.example/e', content: [{
+        type: 'text', text: 'ipsum dolor'
+      }]},
+      {type: 'text', text: ' '},
+      {type: 'link', url: 'https://e.example/j', content: [{
+        type: 'text', text: 'sit'
+      }]},
+      {type: 'text', text: 'amet.'}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem ipsum dolor [L1] sit [L2] amet.',
+  ]);
+}})

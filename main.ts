@@ -1,9 +1,13 @@
-import { LOWER_ALPHA, UPPER_ALPHA, encodeBase } from "./baseEncoder.ts";
+import { encodeBase, LOWER_ALPHA, UPPER_ALPHA } from "./baseEncoder.ts";
 import {
   BreakNode,
   ColumnsNode,
+  EmojiNode,
+  FigureImageNode,
   FormattedTextNode,
   HorizontalRuleNode,
+  ImageNode,
+  LinkNode,
   ListNode,
   NodeVisitor,
   ParagraphNode,
@@ -11,10 +15,10 @@ import {
 } from "./deps.ts";
 
 interface TextVisitingState {
-  imageSet: Set<string>;
   images: Map<string, string>;
-  linkSet: Set<string>;
+  imageCount: number;
   links: Map<string, string>;
+  linkCount: number;
   numericDepth: number;
 }
 
@@ -23,6 +27,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   private lines: string[];
   private lazyLines: string[];
   private breakLazy: boolean;
+  private spaceLazy: boolean;
   private state: TextVisitingState;
   constructor(width: number) {
     super();
@@ -30,12 +35,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.lines = [];
     this.lazyLines = [];
     this.breakLazy = false;
+    this.spaceLazy = false;
     this.state = {
       images: new Map(),
-      imageSet: new Set(),
+      imageCount: 0,
       links: new Map(),
-      linkSet: new Set(),
-      numericDepth: 0
+      linkCount: 0,
+      numericDepth: 0,
     };
   }
 
@@ -91,16 +97,23 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       for (const item of node.content) {
         counter++;
         if (counter > 1) {
-          this.lines.push('')
+          this.lines.push("");
         }
         const counterText = this.counterToDepth(counter);
         const visitor = new FixedWidthTextVisitor(this.width - widthOffset);
-        visitor.setState({...this.state, numericDepth: this.state.numericDepth + 1});
+        visitor.setState({
+          ...this.state,
+          numericDepth: this.state.numericDepth + 1,
+        });
         visitor.visit({ type: "array", content: item.content });
         const lines = visitor.getLines();
         for (let i = 0; i < lines.length; i++) {
           if (i == 0) {
-            this.lines.push(`${' '.repeat(widthOffset - counterText.length - 2)}${counterText}. ${lines[0]}`);
+            this.lines.push(
+              `${
+                " ".repeat(widthOffset - counterText.length - 2)
+              }${counterText}. ${lines[0]}`,
+            );
           } else {
             if (lines[i] == "") {
               this.lines.push("");
@@ -113,7 +126,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     } else {
       for (const item of node.content) {
         const visitor = new FixedWidthTextVisitor(this.width - 5);
-        visitor.setState({...this.state, numericDepth: 0});
+        visitor.setState({ ...this.state, numericDepth: 0 });
         visitor.visit({ type: "array", content: item.content });
         const lines = visitor.getLines();
         for (let i = 0; i < lines.length; i++) {
@@ -145,7 +158,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       const width = i == count - 1 ? this.width - consumedWidth : generalWidth;
 
       const visitor = new FixedWidthTextVisitor(width);
-      visitor.setState({...this.state, numericDepth: 0});
+      visitor.setState({ ...this.state, numericDepth: 0 });
       visitor.visit({ type: "array", content: node.columns[i] });
       const lines = visitor.getLines();
       columns.push(lines);
@@ -169,7 +182,72 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  private counterToDepth(counter : number): string {
+  protected link(node: LinkNode): void {
+    super.link(node);
+    let key: string;
+    if (this.state.links.has(node.url)) {
+      key = this.state.links.get(node.url) || "unreachable";
+    } else {
+      this.state.linkCount++;
+      key = `L${this.state.linkCount}`;
+      this.state.links.set(node.url, key);
+    }
+    this.spaceLazy = true;
+    this.pushText(`[${key}]`);
+    this.spaceLazy = true;
+  }
+
+  protected image(node: ImageNode): void {
+    let key: string;
+    if (this.state.images.has(node.url)) {
+      key = this.state.images.get(node.url) || "unreachable";
+    } else {
+      this.state.imageCount++;
+      key = `I${this.state.imageCount}`;
+      this.state.images.set(node.url, key);
+    }
+    this.pushBlockContentBegin();
+    this.pushText(`[${key}: `);
+    this.pushText(node.alt.replaceAll(/[\n\r\t]/g, " "));
+    this.pushText("]");
+    this.pushBlockContentEnd();
+  }
+
+  protected figureImage(node: FigureImageNode): void {
+    let key: string;
+    if (this.state.images.has(node.url)) {
+      key = this.state.images.get(node.url) || "unreachable";
+    } else {
+      this.state.imageCount++;
+      key = `I${this.state.imageCount}`;
+      this.state.images.set(node.url, key);
+    }
+    this.pushBlockContentBegin();
+    this.pushText(`[${key}: `);
+    this.pushText(node.alt.replaceAll(/[\n\r\t]/g, " "));
+    this.pushText("]");
+    this.pushBlockContentEnd();
+    this.visit({
+      type: "paragraph",
+      content: node.content,
+    });
+  }
+
+  protected emoji(node: EmojiNode): void {
+    let key: string;
+    if (this.state.images.has(node.url)) {
+      key = this.state.images.get(node.url) || "unreachable";
+    } else {
+      this.state.imageCount++;
+      key = `I${this.state.imageCount}`;
+      this.state.images.set(node.url, key);
+    }
+    this.spaceLazy = true;
+    this.pushText(`[${key}: ${node.alt.replaceAll(/[\n\r\t]/g, " ")}]`);
+    this.spaceLazy = true;
+  }
+
+  private counterToDepth(counter: number): string {
     const num = this.state.numericDepth % 3;
     if (num == 0) {
       return `${counter}`;
@@ -191,24 +269,38 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   private pushBlockContentEnd() {
     this.lazyLines.push("");
   }
+
   private pushLazyLines() {
+    let newLines = false;
     if (this.lazyLines.length > 0) {
       this.pushEndOfLineIfAnyContent();
+      newLines = true;
     }
     if (this.breakLazy) {
       this.lines.push("");
+      newLines = true;
     }
     for (const line of this.lazyLines) {
       this.lines.push(line);
+      newLines = true;
+    }
+    if (!newLines && this.spaceLazy && this.lines.length > 0) {
+      const lastLine = this.getLastLine();
+      if (!lastLine.endsWith(" ")) {
+        this.lines[this.lines.length - 1] += " ";
+      }
     }
     this.lazyLines = [];
     this.breakLazy = false;
+    this.spaceLazy = false;
   }
+
   private pushEndOfLineIfAnyContent() {
     if (this.getLastLine() != "") {
       this.pushLine();
     }
   }
+
   private getLastLine() {
     if (this.lines.length == 0) {
       return "";
@@ -229,7 +321,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
     let sliceStart = 0;
     do {
-      if (line == "") {
+      if (line == "" || line.endsWith(" ")) {
         // skip white space
         while (true) {
           const nextChar = text.slice(sliceStart, sliceStart + 1);
@@ -247,17 +339,31 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       let slice = text.slice(sliceStart, sliceEnd);
       const nextChar = text.slice(sliceEnd, sliceEnd + 1);
       if (nextChar && nextChar.match(/[a-zA-Z0-9\.\?,]/)) {
+        let success = false;
         for (let i = 0; i < slice.length; i++) {
           const index = slice.length - 1 - i;
           const char = slice.charAt(index);
           if (char && char.match(/[ =\-_\/\\\n\r\t]/)) {
             sliceEnd -= i;
             slice = text.slice(sliceStart, sliceEnd);
+            success = true;
             break;
           }
         }
 
-        this.lines[index] = line + slice;
+        if (success) {
+          this.lines[index] = line + slice;
+        } else {
+          if (this.getLastLine().length > 0) {
+            sliceEnd = sliceStart;
+            this.lines[index] = line;
+            slice = "";
+          } else {
+            // No choice but to break it;
+            this.lines[index] = line + slice;
+          }
+        }
+
         this.pushLine();
         index++;
         line = this.lines[index];
@@ -269,6 +375,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           break;
         }
       }
+
       if (this.lines[index].length == this.width) {
         this.pushLine();
         index++;
@@ -276,6 +383,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       }
     } while (true);
   }
+
   private pushLine() {
     const lastIndex = this.lines.length - 1;
     if (lastIndex >= 0 && this.lines[lastIndex].endsWith(" ")) {
@@ -284,6 +392,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     this.lines.push("");
   }
+
   public getLines(): readonly string[] {
     return this.lines;
   }
