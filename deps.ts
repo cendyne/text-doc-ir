@@ -2,6 +2,7 @@ export { NodeVisitor } from "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0
 export type {
   BlockQuoteNode,
   BreakNode,
+  BubbleNode,
   CenterNode,
   ColumnsNode,
   EmbedNode,
@@ -16,6 +17,7 @@ export type {
   ListNode,
   NoteNode,
   ParagraphNode,
+  QuoteNode,
   StrikeThroughNode,
   TextNode,
   VideoNode,

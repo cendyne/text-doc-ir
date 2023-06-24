@@ -247,6 +247,28 @@ Deno.test({
     assertEquals(visitor.getLines(), [
       "Lorem ipsum dolor sit amet,",
       "",
+      "consectetur.",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Explicit Break 5",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "array",
+      content: [
+        { type: "text", text: "Lorem ipsum dolor sit amet," },
+        { type: "break" },
+        { type: "break" },
+        { type: "break" },
+        { type: "text", text: "consectetur." },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "Lorem ipsum dolor sit amet,",
+      "",
       "",
       "consectetur.",
     ]);
@@ -1379,3 +1401,94 @@ Deno.test({
     ]);
   },
 });
+
+Deno.test({
+  name: "Block Quote",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "quote",
+      name: "Soatok",
+      icon: "https://e.example/e",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "> Soatok",
+      ">",
+      "> Lorem ipsum dolor sit amet,",
+      "> consectetur adipiscing elit, sed do",
+      "> eiusmod tempor incididunt ut labore et",
+      "> dolore magna aliqua.",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Bubble left",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "bubble",
+      orientation: 'left',
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "| Lorem ipsum dolor sit amet,",
+      "| consectetur adipiscing elit, sed do",
+      "| eiusmod tempor incididunt ut labore",
+      "| et dolore magna aliqua.",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Bubble Right",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "bubble",
+      orientation: 'right',
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "           Lorem ipsum dolor sit amet, |",
+      "   consectetur adipiscing elit, sed do |",
+      "   eiusmod tempor incididunt ut labore |",
+      "               et dolore magna aliqua. |",
+    ]);
+  },
+});
+

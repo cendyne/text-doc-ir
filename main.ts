@@ -2,6 +2,7 @@ import { encodeBase, LOWER_ALPHA, UPPER_ALPHA } from "./baseEncoder.ts";
 import {
   BlockQuoteNode,
   BreakNode,
+  BubbleNode,
   CenterNode,
   ColumnsNode,
   EmbedNode,
@@ -17,6 +18,7 @@ import {
   NodeVisitor,
   NoteNode,
   ParagraphNode,
+  QuoteNode,
   StrikeThroughNode,
   TextNode,
   VideoNode,
@@ -37,6 +39,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   private lazyLines: string[];
   private breakLazy: boolean;
   private spaceLazy: boolean;
+  private breakCount: number;
   private state: TextVisitingState;
   constructor(width: number) {
     super();
@@ -45,6 +48,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.lazyLines = [];
     this.breakLazy = false;
     this.spaceLazy = false;
+    this.breakCount = 0;
     this.state = {
       images: new Map(),
       imageCount: 0,
@@ -80,10 +84,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
   // deno-lint-ignore no-unused-vars
   protected break_(node: BreakNode): void {
-    if (this.breakLazy) {
-      this.lazyLines.push("");
-    }
-    this.breakLazy = true;
+    this.breakCount++;
   }
 
   protected paragraph(node: ParagraphNode): void {
@@ -334,7 +335,8 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentBegin();
     for (const line of visitor.getLines()) {
       this.pushEndOfLineIfAnyContent();
-      this.lines[Math.max(0, this.lines.length - 1)] = " ".repeat(Math.floor((this.width - line.length) / 2)) + line;
+      this.lines[Math.max(0, this.lines.length - 1)] =
+        " ".repeat(Math.floor((this.width - line.length) / 2)) + line;
     }
     this.pushBlockContentEnd();
   }
@@ -416,6 +418,49 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
+  protected quote(node: QuoteNode): void {
+    this.pushBlockContentBegin();
+
+    const visitor = new FixedWidthTextVisitor(this.width - 2);
+    visitor.setState({ ...this.state, numericDepth: 0 });
+    visitor.visit({
+      type: "array",
+      content: [
+        { type: "text", text: node.name },
+        { type: "break" },
+        { type: "break" },
+        ...node.content,
+      ],
+    });
+    for (const line of visitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      this.lines[Math.max(0, this.lines.length - 1)] = "> " + line;
+    }
+    this.pushBlockContentEnd();
+  }
+
+  protected bubble(node: BubbleNode): void {
+    this.pushBlockContentBegin();
+
+    const visitor = new FixedWidthTextVisitor(this.width - 4);
+    visitor.setState({ ...this.state, numericDepth: 0 });
+    visitor.visit({
+      type: "array",
+      content: [
+        ...node.content,
+      ],
+    });
+    for (const line of visitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      if (node.orientation == 'left') {
+        this.lines[Math.max(0, this.lines.length - 1)] = "| " + line;
+      } else if (node.orientation == 'right') {
+        this.lines[Math.max(0, this.lines.length - 1)] = " ".repeat(this.width - 2 - line.length) + line  + " |";
+      }
+    }
+    this.pushBlockContentEnd();
+  }
+
   private counterToDepth(counter: number): string {
     const num = this.state.numericDepth % 3;
     if (num == 0) {
@@ -441,12 +486,28 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
   private pushLazyLines() {
     let newLines = false;
-    if (this.lazyLines.length > 0) {
-      this.pushEndOfLineIfAnyContent();
+    if (this.breakCount > 0) {
+      this.breakCount--;
+      if (
+        this.lines[this.lines.length - 1] &&
+        this.lines[this.lines.length - 1].length > 0
+      ) {
+        this.lines.push("");
+      }
+      while (this.breakCount > 0) {
+        this.breakCount--;
+        this.lines.push("");
+      }
+    }
+    if (
+      this.breakLazy && this.lines[this.lines.length - 1] &&
+      this.lines[this.lines.length - 1].length > 0
+    ) {
+      this.lines.push("");
       newLines = true;
     }
-    if (this.breakLazy) {
-      this.lines.push("");
+    if (this.lazyLines.length > 0) {
+      this.pushEndOfLineIfAnyContent();
       newLines = true;
     }
     for (const line of this.lazyLines) {
