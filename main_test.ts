@@ -1491,3 +1491,102 @@ Deno.test({
     ]);
   },
 });
+
+Deno.test({
+  name: "Sticker Right",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "sticker",
+      orientation: "right",
+      character: "cendyne",
+      name: "hello",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "/----------------------[cendyne: hello]\\",
+      "|          Lorem ipsum dolor sit amet, |",
+      "|  consectetur adipiscing elit, sed do |",
+      "|  eiusmod tempor incididunt ut labore |",
+      "|              et dolore magna aliqua. |",
+      "\\--------------------------------------/",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Sticker Left",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "sticker",
+      orientation: "left",
+      character: "cendyne",
+      name: "hello",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "/[cendyne: hello]----------------------\\",
+      "| Lorem ipsum dolor sit amet,          |",
+      "| consectetur adipiscing elit, sed do  |",
+      "| eiusmod tempor incididunt ut labore  |",
+      "| et dolore magna aliqua.              |",
+      "\\--------------------------------------/",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Sticker Center",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "sticker",
+      orientation: "center",
+      character: "cendyne",
+      name: "hello",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "/-----------[cendyne: hello]-----------\\",
+      "|      Lorem ipsum dolor sit amet,     |",
+      "|  consectetur adipiscing elit, sed do |",
+      "|  eiusmod tempor incididunt ut labore |",
+      "|        et dolore magna aliqua.       |",
+      "\\--------------------------------------/",
+    ]);
+  },
+});

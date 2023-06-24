@@ -18,6 +18,7 @@ export type {
   NoteNode,
   ParagraphNode,
   QuoteNode,
+  StickerNode,
   StrikeThroughNode,
   TextNode,
   VideoNode,

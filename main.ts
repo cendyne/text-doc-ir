@@ -19,6 +19,7 @@ import {
   NoteNode,
   ParagraphNode,
   QuoteNode,
+  StickerNode,
   StrikeThroughNode,
   TextNode,
   VideoNode,
@@ -459,6 +460,55 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           " ".repeat(this.width - 2 - line.length) + line + " |";
       }
     }
+    this.pushBlockContentEnd();
+  }
+
+  protected sticker(node: StickerNode): void {
+    this.pushBlockContentBegin();
+
+    const visitor = new FixedWidthTextVisitor(this.width - 4);
+    visitor.setState({ ...this.state, numericDepth: 0 });
+    visitor.visit({
+      type: "array",
+      content: [
+        ...(node.content || []),
+      ],
+    });
+    this.pushEndOfLineIfAnyContent();
+    const label = `[${node.character}: ${node.name}]`;
+    if (node.orientation == "left") {
+      this.lines[Math.max(0, this.lines.length - 1)] = "/" + label +
+        "-".repeat(this.width - label.length - 2) + "\\";
+    } else if (node.orientation == "right") {
+      this.lines[Math.max(0, this.lines.length - 1)] = "/" +
+        "-".repeat(this.width - label.length - 2) + label + "\\";
+    } else if (node.orientation == "center") {
+      const length = this.width - label.length - 2;
+      const leftLength = Math.floor(length / 2);
+      const rightLength = length - leftLength;
+      this.lines[Math.max(0, this.lines.length - 1)] = "/" +
+        "-".repeat(leftLength) + label + "-".repeat(rightLength) + "\\";
+    }
+    for (const line of visitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      const length = this.width - 3 - line.length;
+      if (node.orientation == "left") {
+        this.lines[Math.max(0, this.lines.length - 1)] = "| " + line +
+          " ".repeat(length) + "|";
+      } else if (node.orientation == "right") {
+        this.lines[Math.max(0, this.lines.length - 1)] = "|" +
+          " ".repeat(length) + line + " |";
+      } else if (node.orientation == "center") {
+        const leftLength = Math.floor(length / 2);
+        const rightLength = length - leftLength;
+        this.lines[Math.max(0, this.lines.length - 1)] = "|" +
+          " ".repeat(leftLength + 1) + line + " ".repeat(rightLength) + "|";
+      }
+    }
+    this.pushEndOfLineIfAnyContent();
+    this.pushText("\\");
+    this.pushText("-".repeat(this.width - 2));
+    this.pushText("/");
     this.pushBlockContentEnd();
   }
 
