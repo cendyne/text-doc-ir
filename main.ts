@@ -265,6 +265,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
   protected embed(node: EmbedNode): void {
     if (node.content.type == "youtube") {
+      this.spaceLazy = true;
       this.link({
         type: "link",
         url: `https://youtu.be/${node.content.id}`,
