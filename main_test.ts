@@ -659,3 +659,61 @@ Deno.test({name: 'Youtube', fn() {
   ]);
 }});
 
+
+Deno.test({name: 'Header - 1', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'header', level: 1, content: [{type: 'text', text: 'Lorem Ipsum'}]},
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem Ipsum',
+    '==========='
+  ]);
+}});
+
+Deno.test({name: 'Header - 2', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'header', level: 1, content: [{type: 'text', text: 'Lorem Ipsum'}]},
+      {type: 'paragraph', content: [{type: 'text', text: 'dolor sit amet.'}]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem Ipsum',
+    '===========',
+    '',
+    'dolor sit amet.'
+  ]);
+}});
+
+Deno.test({name: 'Header - 3', fn() {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: 'array',
+    content: [
+      {type: 'header', level: 1, content: [{type: 'text', text: 'Lorem Ipsum'}]},
+      {type: 'paragraph', content: [{type: 'text', text: 'dolor sit amet.'}]},
+      {type: 'header', level: 2, content: [{type: 'text', text: 'Ut enim ad minim veniam'}]},
+      {type: 'paragraph', content: [{type: 'text', text: 'Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'}]}
+    ]
+  });
+  assertEquals(visitor.getLines(), [
+    'Lorem Ipsum',
+    '===========',
+    '',
+    'dolor sit amet.',
+    '',
+    'Ut enim ad minim veniam',
+    '-----------------------',
+    '',
+    'Quis nostrud exercitation ullamco',
+    'laboris nisi ut aliquip ex ea commodo',
+    'consequat.'
+  ]);
+}});
+

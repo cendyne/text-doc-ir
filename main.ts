@@ -6,6 +6,7 @@ import {
   EmojiNode,
   FigureImageNode,
   FormattedTextNode,
+  HeaderNode,
   HorizontalRuleNode,
   ImageNode,
   LinkNode,
@@ -267,6 +268,34 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         content: [{ type: "text", text: "Youtube Video" }],
       });
     }
+  }
+
+  protected header(node: HeaderNode): void {
+    const startIndex = this.lines.length;
+    super.header(node);
+    const end = this.lines.length;
+    let maxWidth = 1;
+    for (let i = startIndex; i < end; i++) {
+      const line = this.lines[i];
+      maxWidth = Math.min(this.width, line.length);
+    }
+    this.pushLine();
+    let border = '=';
+    if (node.level == 2) {
+      border = '-';
+    } else if (node.level == 3) {
+      border = '^';
+    } else if (node.level == 4) {
+      border = '"';
+    } else if (node.level == 5) {
+      border = '\'';
+    } else if (node.level == 6) {
+      border = '`';
+    }
+
+    this.lines[this.lines.length - 1] = border.repeat(maxWidth);
+    this.breakLazy = false;
+    this.lazyLines = ['']
   }
 
   private counterToDepth(counter: number): string {

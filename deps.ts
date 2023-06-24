@@ -6,6 +6,7 @@ export type {
   EmojiNode,
   FigureImageNode,
   FormattedTextNode,
+  HeaderNode,
   HorizontalRuleNode,
   ImageNode,
   LinkNode,
