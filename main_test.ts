@@ -1590,3 +1590,64 @@ Deno.test({
     ]);
   },
 });
+
+
+Deno.test({
+  name: "Sticker Center",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "card",
+      header: {
+        type: 'card-header',
+        title: [{type: 'text', text: 'Cendyne'}],
+        username: 'cendyne',
+        usernameDomain: 'furry.engineer'
+      },
+      content: {
+        type: 'card-content',
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text:
+                  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+              },
+            ],
+          },
+        ]
+      },
+      media: {
+        type: 'card-media',
+        content: [{
+          type: 'image',
+          url: 'https://e.example/e',
+          alt: 'Demo Image'
+        }]
+      },
+      attribution: {
+        type: 'card-attribution',
+        title: [{type: 'text', text: 'Example Attribution Title'}],
+        url: 'https://e.example/e',
+        date: '2023-06-24T17:14:53+00:00'
+      }
+    });
+    assertEquals(visitor.getLines(), [
+      "/--------------------------------------\\",
+      "|   Cendyne @cendyne@furry.engineer    |",
+      "|--------------------------------------|",
+      "| Lorem ipsum dolor sit amet,          |",
+      "| consectetur adipiscing elit, sed do  |",
+      "| eiusmod tempor incididunt ut labore  |",
+      "| et dolore magna aliqua.              |",
+      "|                                      |",
+      "| [I1: Demo Image]                     |",
+      "|                                      |",
+      "| Example Attribution Title [L1] 6/24/ |",
+      "| 2023                                 |",
+      "\\--------------------------------------/",
+    ]);
+  },
+});

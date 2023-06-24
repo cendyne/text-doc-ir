@@ -3,6 +3,7 @@ import {
   BlockQuoteNode,
   BreakNode,
   BubbleNode,
+  CardNode,
   CenterNode,
   ColumnsNode,
   EmbedNode,
@@ -15,6 +16,7 @@ import {
   ImageNode,
   LinkNode,
   ListNode,
+  Node,
   NodeVisitor,
   NoteNode,
   ParagraphNode,
@@ -505,6 +507,91 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           " ".repeat(leftLength + 1) + line + " ".repeat(rightLength) + "|";
       }
     }
+    this.pushEndOfLineIfAnyContent();
+    this.pushText("\\");
+    this.pushText("-".repeat(this.width - 2));
+    this.pushText("/");
+    this.pushBlockContentEnd();
+  }
+
+  protected card(node: CardNode): void {
+    this.pushBlockContentBegin();
+    this.pushText("/");
+    this.pushText("-".repeat(this.width - 2));
+    this.pushText("\\");
+
+    let anyHeaderLines = false;
+    if (node.header) {
+      const centerVisitor = new FixedWidthTextVisitor(this.width - 4);
+      centerVisitor.setState({ ...this.state, numericDepth: 0 });
+      centerVisitor.center({
+        type: "center",
+        content: [
+          ...node.header.title,
+          ...(node.header.username && [{type:'text', text: ` @${node.header.username}`} as TextNode] || []),
+          ...(node.header.username && [{type:'text', text: `@${node.header.usernameDomain}`} as TextNode] || [])
+        ],
+      });
+
+      for (const line of centerVisitor.getLines()) {
+        anyHeaderLines = true;
+        this.pushEndOfLineIfAnyContent();
+        this.lines[this.lines.length - 1] = "| " + line +
+          " ".repeat(this.width - 4 - line.length) + " |";
+      }
+      if (anyHeaderLines) {
+        this.pushLine();
+        this.pushText("|" + "-".repeat(this.width - 2) + "|");
+      }
+    }
+
+
+    const contentVisitor = new FixedWidthTextVisitor(this.width - 4);
+    contentVisitor.setState({ ...this.state, numericDepth: 0 });
+    const content : Node[] = [
+      ...(node.content && node.content.content || []),
+      ...(node.media && node.media.content || [])
+    ]
+    if (node.attribution) {
+      let date : Date | undefined;
+      if (node.attribution.date) {
+        try {
+          date = new Date(node.attribution.date);
+        } catch (_e) {
+          // Oh well
+        }
+      }
+      content.push({
+        type: 'paragraph',
+        content: [
+          ...(node.attribution.title || []),
+          ...(node.attribution.url && [{
+            type: 'link',
+            url: node.attribution.url,
+            content: []
+          } as LinkNode] || []),
+          ...(node.attribution.archiveUrl && [{
+            type: 'link',
+            url: node.attribution.archiveUrl,
+            content: []
+          } as LinkNode] || []),
+          ...(date && [{
+            type: 'text',
+            text: date.toLocaleDateString()
+          }] as Node[] || [])
+        ]
+      })
+    }
+    contentVisitor.visit({
+      type: "array",
+      content
+    });
+    for (const line of contentVisitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      this.lines[this.lines.length - 1] = "| " + line +
+        " ".repeat(this.width - 4 - line.length) + " |";
+    }
+
     this.pushEndOfLineIfAnyContent();
     this.pushText("\\");
     this.pushText("-".repeat(this.width - 2));
