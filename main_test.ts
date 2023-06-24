@@ -1239,3 +1239,143 @@ Deno.test({
     ]);
   },
 });
+
+Deno.test({
+  name: "Block Quote",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "block-quote",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "> Lorem ipsum dolor sit amet,",
+      "> consectetur adipiscing elit, sed do",
+      "> eiusmod tempor incididunt ut labore et",
+      "> dolore magna aliqua.",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Warning",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "warning",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "| Lorem ipsum dolor sit amet,",
+      "| consectetur adipiscing elit, sed do",
+      "| eiusmod tempor incididunt ut labore et",
+      "| dolore magna aliqua.",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Note",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "note",
+      content: [
+        {
+          type: "text",
+          text:
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        }
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "Note: Lorem ipsum dolor sit amet,",
+      "consectetur adipiscing elit, sed do",
+      "eiusmod tempor incididunt ut labore et",
+      "dolore magna aliqua.",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Center",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "center",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text:
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            },
+          ],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "Lorem ipsum dolor sit amet, consectetur",
+      " adipiscing elit, sed do eiusmod tempor",
+      "  incididunt ut labore et dolore magna",
+      "                aliqua.",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "High Tech Alert",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "high-tech-alert",
+      warning: [
+        {
+          type: 'text',
+          text: 'Lorem ipsum dolor sit amet'
+        }
+      ],
+      content: [
+        {
+          type: "text",
+          text:
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        }
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "/--------------------------------------\\",
+      "|      Lorem ipsum dolor sit amet      |",
+      "|--------------------------------------|",
+      "| Lorem ipsum dolor sit amet,          |",
+      "| consectetur adipiscing elit, sed do  |",
+      "| eiusmod tempor incididunt ut labore  |",
+      "| et dolore magna aliqua.              |",
+      "\\--------------------------------------/"
+    ]);
+  },
+});

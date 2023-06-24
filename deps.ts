@@ -1,18 +1,23 @@
 export { NodeVisitor } from "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/index.ts";
 export type {
+  BlockQuoteNode,
   BreakNode,
+  CenterNode,
   ColumnsNode,
   EmbedNode,
   EmojiNode,
   FigureImageNode,
   FormattedTextNode,
   HeaderNode,
+  HighTechAlertNode,
   HorizontalRuleNode,
   ImageNode,
   LinkNode,
   ListNode,
+  NoteNode,
   ParagraphNode,
   StrikeThroughNode,
   TextNode,
   VideoNode,
+  WarningNode,
 } from "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/index.ts";

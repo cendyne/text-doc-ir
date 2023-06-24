@@ -1,21 +1,26 @@
 import { encodeBase, LOWER_ALPHA, UPPER_ALPHA } from "./baseEncoder.ts";
 import {
+  BlockQuoteNode,
   BreakNode,
+  CenterNode,
   ColumnsNode,
   EmbedNode,
   EmojiNode,
   FigureImageNode,
   FormattedTextNode,
   HeaderNode,
+  HighTechAlertNode,
   HorizontalRuleNode,
   ImageNode,
   LinkNode,
   ListNode,
   NodeVisitor,
+  NoteNode,
   ParagraphNode,
   StrikeThroughNode,
   TextNode,
   VideoNode,
+  WarningNode,
 } from "./deps.ts";
 
 interface TextVisitingState {
@@ -307,6 +312,108 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushText("(Strike through: ");
     super.strikeThrough(node);
     this.pushText(")");
+  }
+
+  protected note(node: NoteNode): void {
+    this.paragraph({
+      type: "paragraph",
+      content: [
+        { type: "text", text: "Note: " },
+        ...node.content,
+      ],
+    });
+  }
+
+  protected center(node: CenterNode): void {
+    const visitor = new FixedWidthTextVisitor(this.width);
+    visitor.setState({ ...this.state, numericDepth: 0 });
+    visitor.visit({
+      type: "array",
+      content: node.content,
+    });
+    this.pushBlockContentBegin();
+    for (const line of visitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      this.lines[Math.max(0, this.lines.length - 1)] = " ".repeat(Math.floor((this.width - line.length) / 2)) + line;
+    }
+    this.pushBlockContentEnd();
+  }
+
+  protected warning(node: WarningNode): void {
+    this.pushBlockContentBegin();
+
+    const visitor = new FixedWidthTextVisitor(this.width - 2);
+    visitor.setState({ ...this.state, numericDepth: 0 });
+    visitor.visit({
+      type: "array",
+      content: node.content,
+    });
+    for (const line of visitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      this.lines[Math.max(0, this.lines.length - 1)] = "| " + line;
+    }
+
+    this.pushBlockContentEnd();
+  }
+
+  protected highTechAlert(node: HighTechAlertNode): void {
+    this.pushBlockContentBegin();
+    this.pushText("/");
+    this.pushText("-".repeat(this.width - 2));
+    this.pushText("\\");
+
+    const centerVisitor = new FixedWidthTextVisitor(this.width - 4);
+    centerVisitor.setState({ ...this.state, numericDepth: 0 });
+    centerVisitor.center({
+      type: "center",
+      content: node.warning,
+    });
+    let anyWarningLines = false;
+    for (const line of centerVisitor.getLines()) {
+      anyWarningLines = true;
+      this.pushEndOfLineIfAnyContent();
+      this.lines[this.lines.length - 1] = "| " + line +
+        " ".repeat(this.width - 4 - line.length) + " |";
+    }
+    if (anyWarningLines) {
+      this.pushLine();
+      this.pushText("|" + "-".repeat(this.width - 2) + "|");
+    }
+
+    const contentVisitor = new FixedWidthTextVisitor(this.width - 4);
+    contentVisitor.setState({ ...this.state, numericDepth: 0 });
+    contentVisitor.visit({
+      type: "array",
+      content: node.content,
+    });
+    for (const line of contentVisitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      this.lines[this.lines.length - 1] = "| " + line +
+        " ".repeat(this.width - 4 - line.length) + " |";
+    }
+
+    this.pushEndOfLineIfAnyContent();
+    this.pushText("\\");
+    this.pushText("-".repeat(this.width - 2));
+    this.pushText("/");
+    this.pushBlockContentEnd();
+  }
+
+  protected blockQuote(node: BlockQuoteNode): void {
+    this.pushBlockContentBegin();
+
+    const visitor = new FixedWidthTextVisitor(this.width - 2);
+    visitor.setState({ ...this.state, numericDepth: 0 });
+    visitor.visit({
+      type: "array",
+      content: node.content,
+    });
+    for (const line of visitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      this.lines[Math.max(0, this.lines.length - 1)] = "> " + line;
+    }
+
+    this.pushBlockContentEnd();
   }
 
   private counterToDepth(counter: number): string {
