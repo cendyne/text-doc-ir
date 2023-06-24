@@ -187,6 +187,9 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
   protected link(node: LinkNode): void {
     super.link(node);
+    if (this.state.linkCount == 83) {
+      // console.log(JSON.stringify(this.state));
+    }
     let key: string;
     if (this.state.links.has(node.url)) {
       key = this.state.links.get(node.url) || "unreachable";
@@ -337,9 +340,12 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     if (!newLines && this.spaceLazy && this.lines.length > 0) {
       const lastLine = this.getLastLine();
-      if (!lastLine.endsWith(" ")) {
+      if (!lastLine.endsWith(" ") && lastLine.length < this.width && lastLine.length > 0) {
         this.lines[this.lines.length - 1] += " ";
       }
+    }
+    if (this.getLastLine().length == this.width) {
+      this.lines.push("");
     }
     this.lazyLines = [];
     this.breakLazy = false;
@@ -389,7 +395,9 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       let sliceEnd = sliceStart + this.width - line.length;
       let slice = text.slice(sliceStart, sliceEnd);
       const nextChar = text.slice(sliceEnd, sliceEnd + 1);
-      if (nextChar && nextChar.match(/[a-zA-Z0-9\.\?,]/)) {
+      if (slice == '') {
+        break;
+      } else if (nextChar && nextChar.match(/[a-zA-Z0-9\.\?,\]\)]/)) {
         let success = false;
         for (let i = 0; i < slice.length; i++) {
           const index = slice.length - 1 - i;
@@ -404,11 +412,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
         if (success) {
           this.lines[index] = line + slice;
+          if (this.lines[index].length > this.width) {
+            console.log('oops 1')
+          }
         } else {
           if (this.getLastLine().length > 0) {
             sliceEnd = sliceStart;
             this.lines[index] = line;
-            slice = "";
           } else {
             // No choice but to break it;
             this.lines[index] = line + slice;

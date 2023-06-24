@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.192.0/testing/asserts.ts";
 import { FixedWidthTextVisitor } from "./main.ts";
+import { LinkNode } from "./deps.ts";
 
 Deno.test({name: 'lorem ipsum 40', fn() {
   const visitor = new FixedWidthTextVisitor(40);
@@ -716,4 +717,129 @@ Deno.test({name: 'Header - 3', fn() {
     'consequat.'
   ]);
 }});
+
+Deno.test({name: 'Regression - 1', fn() {
+  const visitor = new FixedWidthTextVisitor(80);
+  visitor.visit({type: 'array', content: [
+    {type: 'paragraph', content: Array(82).fill('').map((v,i)=> {
+      return {type: 'link', url: `https://${i}`, content: [{type: 'text', text: ''}]} as LinkNode;
+    })},
+    {
+      type: "paragraph",
+      content: [
+        {
+          type: "text",
+          text: "When you see a custom anime cat girl speaking to you while creating open source 3D drivers for AArch64 Apple hardware, or read "
+        },
+        {
+          type: "link",
+          content: [
+            {
+              type: "text",
+              text: "How to use a fork of the Go compiler with Nix"
+            }
+          ],
+          url: "https://xeiaso.net/blog/go-fork-nix"
+        },
+        {
+          type: "text",
+          text: " ("
+        },
+        {
+          type: "link",
+          content: [
+            {
+              type: "text",
+              text: "archived"
+            }
+          ],
+          url: "https://archive.is/kwiTg"
+        },
+        {
+          type: "text",
+          text: ") by an orca dragon, shark, and a fox girl: do not make fun of it. These designs are personally created and represent either the self image of the author or the image they wish to be seen as, and are "
+        },
+        {
+          type: "bold",
+          content: [
+            {
+              type: "text",
+              text: "very different"
+            }
+          ]
+        },
+        {
+          type: "text",
+          text: " from those that develop dysphoria or dysmorphia "
+        },
+        {
+          type: "bold",
+          content: [
+            {
+              type: "italic",
+              content: [
+                {
+                  type: "text",
+                  text: "because of technology or marketing"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          type: "text",
+          text: " released by corporations. Unlike young girls that that feel body shame over "
+        },
+        {
+          type: "link",
+          content: [
+            {
+              type: "text",
+              text: "not having a thin figure like a Barbie doll"
+            }
+          ],
+          url: "https://www.teenvogue.com/story/barbie-body-image-study"
+        },
+        {
+          type: "text",
+          text: " ("
+        },
+        {
+          type: "link",
+          content: [
+            {
+              type: "text",
+              text: "archived"
+            }
+          ],
+          url: "https://archive.is/qB1GH"
+        },
+        {
+          type: "text",
+          text: ",) these personal images are carefully prepared with significant introspection."
+        }
+      ]
+    }]
+  });
+  assertEquals(visitor.getLines(), [
+    '[L1] [L2] [L3] [L4] [L5] [L6] [L7] [L8] [L9] [L10] [L11] [L12] [L13] [L14] [L15]',
+    '[L16] [L17] [L18] [L19] [L20] [L21] [L22] [L23] [L24] [L25] [L26] [L27] [L28]',
+    '[L29] [L30] [L31] [L32] [L33] [L34] [L35] [L36] [L37] [L38] [L39] [L40] [L41]',
+    '[L42] [L43] [L44] [L45] [L46] [L47] [L48] [L49] [L50] [L51] [L52] [L53] [L54]',
+    '[L55] [L56] [L57] [L58] [L59] [L60] [L61] [L62] [L63] [L64] [L65] [L66] [L67]',
+    '[L68] [L69] [L70] [L71] [L72] [L73] [L74] [L75] [L76] [L77] [L78] [L79] [L80]',
+    '[L81] [L82]',
+    '',
+    'When you see a custom anime cat girl speaking to you while creating open source',
+    '3D drivers for AArch64 Apple hardware, or read How to use a fork of the Go',
+    'compiler with Nix [L83] (archived [L84] ) by an orca dragon, shark, and a fox',
+    "girl: do not make fun of it. These designs are personally created and represent",
+    "either the self image of the author or the image they wish to be seen as, and",
+    "are very different from those that develop dysphoria or dysmorphia because of",
+    "technology or marketing released by corporations. Unlike young girls that that",
+    "feel body shame over not having a thin figure like a Barbie doll [L85] (archived",
+    '[L86] ,) these personal images are carefully prepared with significant',
+    'introspection.'
+  ]);
+}})
 
