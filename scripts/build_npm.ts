@@ -12,16 +12,17 @@ await build({
   },
   test: false,
   mappings: {
-    'https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.8/index.ts': {
+    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.8/index.ts": {
       name: "document-ir",
-      version: "0.0.8"
-    }
+      version: "0.0.8",
+    },
   },
   package: {
     // package.json properties
     name: "text-doc-ir",
     version: Deno.args[0],
-    description: "Transforms a document intermediate representation into plain text with formatting",
+    description:
+      "Transforms a document intermediate representation into plain text with formatting",
     license: "MIT",
     repository: {
       type: "git",
@@ -29,7 +30,7 @@ await build({
     },
     bugs: {
       url: "https://github.com/cendyne/text-doc-ir/issues",
-    }
+    },
   },
   postBuild() {
     // steps to run after building and before running the tests
