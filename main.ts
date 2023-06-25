@@ -46,6 +46,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   private breakLazy: boolean;
   private spaceLazy: boolean;
   private breakCount: number;
+  private eatSpaces: boolean;
   private state: TextVisitingState;
   constructor(width: number) {
     super();
@@ -55,6 +56,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.breakLazy = false;
     this.spaceLazy = false;
     this.breakCount = 0;
+    this.eatSpaces = true;
     this.state = {
       images: new Map(),
       imagesReverse: new Map(),
@@ -78,6 +80,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentBegin();
     for (const line of node.text.split("\n")) {
       this.pushLine();
+      this.eatSpaces = false;
       this.pushText(line);
     }
     this.pushBlockContentEnd();
@@ -778,7 +781,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
     let sliceStart = 0;
     do {
-      if (line == "" || line.endsWith(" ")) {
+      if ((line == "" && this.eatSpaces) || line.endsWith(" ")) {
         // skip white space
         while (true) {
           const nextChar = text.slice(sliceStart, sliceStart + 1);
@@ -792,6 +795,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           }
         }
       }
+      this.eatSpaces = true;
       let sliceEnd = sliceStart + this.width - line.length;
       let slice = text.slice(sliceStart, sliceEnd);
       const nextChar = text.slice(sliceEnd, sliceEnd + 1);

@@ -123,6 +123,26 @@ Deno.test({
 });
 
 Deno.test({
+  name: "Formatted Text with leading space",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(80);
+    visitor.visit({
+      type: "formatted-text",
+      text:
+        'GET https://c.cdyn.dev/PFCc64ah - Ok @ 1/22/2023, 5:21:33 PM\n  (log) Got Range request: 0 - : {"range":{"offset":0}}\n  (log) Range result: \'bytes 0-540152/540153\'\nGET https://c.cdyn.dev/PFCc64ah - Ok @ 1/22/2023, 5:21:36 PM\n  (log) Got Range request: 491520 - : {"range":{"offset":491520}}\n  (log) Range result: \'bytes 491520-540152/540153\'',
+    });
+    assertEquals(visitor.getLines(), [
+      "GET https://c.cdyn.dev/PFCc64ah - Ok @ 1/22/2023, 5:21:33 PM",
+      '  (log) Got Range request: 0 - : {"range":{"offset":0}}',
+      "  (log) Range result: 'bytes 0-540152/540153'",
+      "GET https://c.cdyn.dev/PFCc64ah - Ok @ 1/22/2023, 5:21:36 PM",
+      '  (log) Got Range request: 491520 - : {"range":{"offset":491520}}',
+      "  (log) Range result: 'bytes 491520-540152/540153'",
+    ]);
+  },
+});
+
+Deno.test({
   name: "Styling is ignored",
   fn() {
     const visitor = new FixedWidthTextVisitor(40);
