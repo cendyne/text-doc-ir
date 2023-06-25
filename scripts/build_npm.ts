@@ -12,9 +12,9 @@ await build({
   },
   test: false,
   mappings: {
-    "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.8/index.ts": {
+    "https://deno.land/x/document_ir@0.0.9/index.ts": {
       name: "document-ir",
-      version: "0.0.8",
+      version: "0.0.9",
     },
   },
   package: {
