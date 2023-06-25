@@ -1,4 +1,4 @@
-export { NodeVisitor } from "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/index.ts";
+export { NodeVisitor } from "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.8/index.ts";
 export type {
   BlockQuoteNode,
   BreakNode,
@@ -26,4 +26,4 @@ export type {
   TextNode,
   VideoNode,
   WarningNode,
-} from "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.5/index.ts";
+} from "https://cdn.jsdelivr.net/gh/cendyne/document-ir@0.0.8/index.ts";
