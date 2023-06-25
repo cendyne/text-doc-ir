@@ -1,7 +1,11 @@
-export function encodeBase(keys: string[], num: number, shift: boolean) : string {
-  const output : string[] = [];
+export function encodeBase(
+  keys: string[],
+  num: number,
+  shift: boolean,
+): string {
+  const output: string[] = [];
   if (shift && num == 0) {
-    return '';
+    return "";
   }
   do {
     const mod = num % keys.length;
@@ -18,9 +22,9 @@ export function encodeBase(keys: string[], num: number, shift: boolean) : string
     }
     num = next;
   } while (num > 0);
-  return output.reverse().join('');
+  return output.reverse().join("");
 }
 
-export const NUMERIC = '0123456789'.split('');
-export const UPPER_ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-export const LOWER_ALPHA = 'abcdefghijklmnopqrstuvwxyz'.split('');
+export const NUMERIC = "0123456789".split("");
+export const UPPER_ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+export const LOWER_ALPHA = "abcdefghijklmnopqrstuvwxyz".split("");

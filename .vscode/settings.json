@@ -1,4 +1,4 @@
 {
-    "editor.wordWrap": "on",
-    "deno.enable": true
+  "editor.wordWrap": "on",
+  "deno.enable": true
 }
