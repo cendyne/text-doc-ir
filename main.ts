@@ -6,6 +6,7 @@ import {
   CardNode,
   CenterNode,
   ColumnsNode,
+  DefinitionReferenceNode,
   DocumentNode,
   EmbedNode,
   EmojiNode,
@@ -614,6 +615,15 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushText("-".repeat(this.width - 2));
     this.pushText("/");
     this.pushBlockContentEnd();
+  }
+
+  protected definitionReference(node: DefinitionReferenceNode): void {
+    this.visit({
+      type: "array",
+      content: [
+        ...node.content,
+      ],
+    });
   }
 
   protected document(node: DocumentNode): void {

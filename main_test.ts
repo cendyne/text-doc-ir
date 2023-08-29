@@ -149,7 +149,18 @@ Deno.test({
     visitor.visit({
       type: "array",
       content: [
-        { type: "text", text: "Lorem ipsum dolor sit amet, " },
+        { type: "text", text: "Lorem ipsum dolor sit " },
+        {
+          type: "definition-reference",
+          content: [
+            { type: "text", text: "amet" },
+          ],
+          definition: {
+            abbreviation: [{ type: "text", text: "amet" }],
+            key: "amet",
+          },
+        },
+        { type: "text", text: ", " },
         {
           type: "italic",
           content: [
