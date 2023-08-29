@@ -6,6 +6,7 @@ import {
   CardNode,
   CenterNode,
   ColumnsNode,
+  DefinitionNode,
   DefinitionReferenceNode,
   DocumentNode,
   EmbedNode,
@@ -624,6 +625,28 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         ...node.content,
       ],
     });
+  }
+
+  protected definition(node: DefinitionNode): void {
+    this.pushBlockContentBegin();
+    this.chooseChildren(node.title);
+    this.pushText(" (");
+    this.chooseChildren(node.abbreviation);
+    this.pushText("):");
+    this.pushLine();
+
+    const visitor = new FixedWidthTextVisitor(this.width - 2);
+    visitor.setState({ ...this.state, numericDepth: 0 });
+    visitor.visit({
+      type: "array",
+      content: node.content,
+    });
+    for (const line of visitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      this.lines[Math.max(0, this.lines.length - 1)] = "  " + line;
+    }
+
+    this.pushBlockContentEnd();
   }
 
   protected document(node: DocumentNode): void {

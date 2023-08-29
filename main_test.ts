@@ -1623,6 +1623,28 @@ Deno.test({
 });
 
 Deno.test({
+  name: "Definition",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "definition",
+      abbreviation: [{ type: "text", text: "ABCD" }],
+      title: [{ type: "text", text: "Alphabet" }],
+      key: "abcd",
+      content: [{
+        type: "text",
+        text: "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z",
+      }],
+    });
+    assertEquals(visitor.getLines(), [
+      "Alphabet (ABCD):",
+      "  A B C D E F G H I J K L M N O P Q R S",
+      "  T U V W X Y Z",
+    ]);
+  },
+});
+
+Deno.test({
   name: "Sticker Center",
   fn() {
     const visitor = new FixedWidthTextVisitor(40);
