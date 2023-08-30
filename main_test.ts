@@ -989,6 +989,53 @@ Deno.test({
 });
 
 Deno.test({
+  name: "Link - 3",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "paragraph",
+      content: [
+        { type: "text", text: "Lorem " },
+        {
+          type: "link",
+          url: "https://e.example/e",
+          content: [{
+            type: "text",
+            text: "ipsum dolor",
+          }],
+        },
+        { type: "text", text: "." },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "Lorem ipsum dolor [L1].",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Link - 4",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "paragraph",
+      content: [
+        { type: "text", text: "Lorem (" },
+        {
+          type: "link",
+          url: "https://e.example/e",
+          content: [],
+        },
+        { type: "text", text: ")" },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "Lorem ([L1])",
+    ]);
+  },
+});
+
+Deno.test({
   name: "Video",
   fn() {
     const visitor = new FixedWidthTextVisitor(40);
@@ -1259,13 +1306,13 @@ Deno.test({
       "",
       "When you see a custom anime cat girl speaking to you while creating open source",
       "3D drivers for AArch64 Apple hardware, or read How to use a fork of the Go",
-      "compiler with Nix [L83] (archived [L84] ) by an orca dragon, shark, and a fox",
+      "compiler with Nix [L83] (archived [L84]) by an orca dragon, shark, and a fox",
       "girl: do not make fun of it. These designs are personally created and represent",
       "either the self image of the author or the image they wish to be seen as, and",
       "are very different from those that develop dysphoria or dysmorphia because of",
       "technology or marketing released by corporations. Unlike young girls that that",
       "feel body shame over not having a thin figure like a Barbie doll [L85] (archived",
-      "[L86] ,) these personal images are carefully prepared with significant",
+      "[L86],) these personal images are carefully prepared with significant",
       "introspection.",
     ]);
   },

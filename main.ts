@@ -220,6 +220,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.state.linksReverse.set(key, node.url);
     }
     this.spaceLazy = true;
+
+    if (
+      this.spaceLazy && this.lines.length > 0 &&
+      this.lines[this.lines.length - 1].match(/[{\(\[]$/)
+    ) {
+      this.spaceLazy = false;
+    }
     this.pushText(`[${key}]`);
     this.spaceLazy = true;
   }
@@ -802,6 +809,9 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   }
 
   private pushText(text: string) {
+    if (this.spaceLazy && text.match(/^[\.,}\)\]]/)) {
+      this.spaceLazy = false;
+    }
     this.pushLazyLines();
     let index = this.lines.length - 1;
     let line: string;
