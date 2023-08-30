@@ -12,9 +12,9 @@ await build({
   },
   test: false,
   mappings: {
-    "https://deno.land/x/document_ir@0.0.13/index.ts": {
+    "https://deno.land/x/document_ir@0.0.14/index.ts": {
       name: "document-ir",
-      version: "0.0.13",
+      version: "0.0.14",
     },
   },
   package: {
