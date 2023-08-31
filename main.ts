@@ -699,6 +699,12 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         visitor.spaceLazy = true;
       }
 
+      visitor.restoreState(this);
+
+      visitor.visit({
+        type: "array",
+        content: node.children,
+      });
       let counter = 0;
       for (const line of visitor.getLines()) {
         this.pushEndOfLineIfAnyContent();
@@ -711,17 +717,6 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         }
 
         counter++;
-      }
-
-      visitor.restoreState(this);
-
-      visitor.visit({
-        type: "array",
-        content: node.children,
-      });
-      for (const line of visitor.getLines()) {
-        this.pushEndOfLineIfAnyContent();
-        this.lines[Math.max(0, this.lines.length - 1)] = " " + line;
       }
       visitor.restoreState(this);
     } else {
@@ -765,12 +760,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.lines[Math.max(0, this.lines.length - 1)] = "/" + "-".repeat(left) +
         " Table of contents " + "-".repeat(right) + "\\";
 
-      for (const line of visitor.getLines()) {
+      for (const line of lines) {
         this.pushEndOfLineIfAnyContent();
         this.lines[Math.max(0, this.lines.length - 1)] = "| " + line +
           " ".repeat(maxLength - line.length) + "|";
       }
 
+      this.pushEndOfLineIfAnyContent();
       this.lines[Math.max(0, this.lines.length - 1)] = "\\" +
         "-".repeat(maxLength + 1) + "/";
 
