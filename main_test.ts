@@ -1857,7 +1857,42 @@ Deno.test({
   name: "Table of Contents - 2",
   fn() {
     const visitor = new FixedWidthTextVisitor(40);
-    visitor.visit({"type":"toc","children":[{"type":"toc","children":[{"type":"toc","children":[],"content":[{"type":"text","text":"Competition overview."}],"hrefHtmlId":"competition-overview."},{"type":"toc","children":[],"content":[{"type":"text","text":"A PQC experiment at scale"}],"hrefHtmlId":"a-pqc-experiment-at-scale"}],"content":[{"type":"text","text":"The NIST competition"}],"hrefHtmlId":"the-nist-competition"},{"type":"toc","children":[],"content":[{"type":"text","text":"Panel discussion"}],"hrefHtmlId":"panel-discussion"},{"type":"toc","children":[],"content":[{"type":"text","text":"Final thoughts"}],"hrefHtmlId":"final-thoughts"},{"type":"toc","children":[],"content":[{"type":"text","text":"Acknowledgements"}],"hrefHtmlId":"acknowledgements"}],"content":[],"hrefHtmlId":"title"});
+    visitor.visit({
+      "type": "toc",
+      "children": [{
+        "type": "toc",
+        "children": [{
+          "type": "toc",
+          "children": [],
+          "content": [{ "type": "text", "text": "Competition overview." }],
+          "hrefHtmlId": "competition-overview.",
+        }, {
+          "type": "toc",
+          "children": [],
+          "content": [{ "type": "text", "text": "A PQC experiment at scale" }],
+          "hrefHtmlId": "a-pqc-experiment-at-scale",
+        }],
+        "content": [{ "type": "text", "text": "The NIST competition" }],
+        "hrefHtmlId": "the-nist-competition",
+      }, {
+        "type": "toc",
+        "children": [],
+        "content": [{ "type": "text", "text": "Panel discussion" }],
+        "hrefHtmlId": "panel-discussion",
+      }, {
+        "type": "toc",
+        "children": [],
+        "content": [{ "type": "text", "text": "Final thoughts" }],
+        "hrefHtmlId": "final-thoughts",
+      }, {
+        "type": "toc",
+        "children": [],
+        "content": [{ "type": "text", "text": "Acknowledgements" }],
+        "hrefHtmlId": "acknowledgements",
+      }],
+      "content": [],
+      "hrefHtmlId": "title",
+    });
     assertEquals(visitor.getLines(), [
       "/------ Table of contents ------\\",
       "| * The NIST competition        |",
@@ -1870,5 +1905,3 @@ Deno.test({
     ]);
   },
 });
-
-
