@@ -1,4 +1,4 @@
-export { NodeVisitor } from "https://deno.land/x/document_ir@0.0.14/index.ts";
+export { NodeVisitor } from "https://deno.land/x/document_ir@0.0.15/index.ts";
 export type {
   BlockQuoteNode,
   BreakNode,
@@ -25,7 +25,8 @@ export type {
   QuoteNode,
   StickerNode,
   StrikeThroughNode,
+  TableOfContentsNode,
   TextNode,
   VideoNode,
   WarningNode,
-} from "https://deno.land/x/document_ir@0.0.14/index.ts";
+} from "https://deno.land/x/document_ir@0.0.15/index.ts";

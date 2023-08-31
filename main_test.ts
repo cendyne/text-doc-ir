@@ -1760,6 +1760,24 @@ Deno.test({
       title: "Example Title",
       url: "/example",
       content: [
+        {
+          type: "toc",
+          content: [{ type: "text", text: "Top Level Heading" }],
+          hrefHtmlId: "id-here",
+          date: {
+            type: "date",
+            isoDate: "2023-01-01",
+            content: [{ type: "text", text: "January 1st" }],
+          },
+          children: [
+            {
+              type: "toc",
+              content: [{ type: "text", text: "Sub Heading" }],
+              href: "https://whatever.example/",
+              children: [],
+            },
+          ],
+        },
         { type: "text", text: "Lorem " },
         {
           type: "link",
@@ -1783,17 +1801,54 @@ Deno.test({
       "             Example Title",
       "----------------------------------------",
       "",
-      "Lorem ipsum dolor [L1] sit amet.",
+      "/------ Table of contents ------\\",
+      "| January 1st Top Level Heading |",
+      "| * Sub Heading [L1]            |",
+      "\\-------------------------------/",
+      "",
+      "Lorem ipsum dolor [L2] sit amet.",
       "[I1: Example Image]",
       "",
       "----------------------------------------",
-      " [L1]: https://cendyne.dev/posts/2023-06",
+      " [L1]: https://whatever.example/",
+      " [L2]: https://cendyne.dev/posts/2023-06",
       "       -20-twitters-bot-problem-is-",
       "       getting-weird-with-chatgpt.json",
       " [I1]: https://media.tech.lgbt/media_",
       "       attachments/files/110/588/972/540",
       "       /677/028/original/",
       "       b962a00b667e6b0b.png",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Table of Contents",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "toc",
+      content: [{ type: "text", text: "Top Level Heading" }],
+      hrefHtmlId: "id-here",
+      date: {
+        type: "date",
+        isoDate: "2023-01-01",
+        content: [{ type: "text", text: "January 1st" }],
+      },
+      children: [
+        {
+          type: "toc",
+          content: [{ type: "text", text: "Sub Heading" }],
+          href: "https://whatever.example/",
+          children: [],
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "/------ Table of contents ------\\",
+      "| January 1st Top Level Heading |",
+      "| * Sub Heading [L1]            |",
+      "\\-------------------------------/",
     ]);
   },
 });

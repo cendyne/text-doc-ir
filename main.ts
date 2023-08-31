@@ -26,6 +26,7 @@ import {
   QuoteNode,
   StickerNode,
   StrikeThroughNode,
+  TableOfContentsNode,
   TextNode,
   VideoNode,
   WarningNode,
@@ -39,6 +40,7 @@ interface TextVisitingState {
   linksReverse: Map<string, string>;
   linkCount: number;
   numericDepth: number;
+  tocDepth: number;
 }
 
 export class FixedWidthTextVisitor extends NodeVisitor {
@@ -67,11 +69,17 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       linksReverse: new Map(),
       linkCount: 0,
       numericDepth: 0,
+      tocDepth: 0,
     };
   }
 
   private setState(state: TextVisitingState) {
     this.state = state;
+  }
+
+  private restoreState(parent: FixedWidthTextVisitor) {
+    parent.state.imageCount = this.state.imageCount;
+    parent.state.linkCount = this.state.linkCount;
   }
 
   protected text(node: TextNode): void {
@@ -145,6 +153,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
             }
           }
         }
+        visitor.restoreState(this);
       }
     } else {
       for (const item of node.content) {
@@ -159,6 +168,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
             this.lines.push("     " + lines[i]);
           }
         }
+        visitor.restoreState(this);
       }
     }
     this.pushBlockContentEnd();
@@ -188,6 +198,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       maxLines = Math.max(maxLines, lines.length);
 
       consumedWidth += width;
+      visitor.restoreState(this);
     }
 
     this.pushBlockContentBegin();
@@ -215,6 +226,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       key = this.state.links.get(node.url) || "unreachable";
     } else {
       this.state.linkCount++;
+
       key = `L${this.state.linkCount}`;
       this.state.links.set(node.url, key);
       this.state.linksReverse.set(key, node.url);
@@ -360,6 +372,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.lines[Math.max(0, this.lines.length - 1)] =
         " ".repeat(Math.floor((this.width - line.length) / 2)) + line;
     }
+    visitor.restoreState(this);
     this.pushBlockContentEnd();
   }
 
@@ -376,6 +389,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.pushEndOfLineIfAnyContent();
       this.lines[Math.max(0, this.lines.length - 1)] = "| " + line;
     }
+    visitor.restoreState(this);
 
     this.pushBlockContentEnd();
   }
@@ -403,6 +417,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.pushLine();
       this.pushText("|" + "-".repeat(this.width - 2) + "|");
     }
+    centerVisitor.restoreState(this);
 
     const contentVisitor = new FixedWidthTextVisitor(this.width - 4);
     contentVisitor.setState({ ...this.state, numericDepth: 0 });
@@ -420,6 +435,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushText("\\");
     this.pushText("-".repeat(this.width - 2));
     this.pushText("/");
+    contentVisitor.restoreState(this);
     this.pushBlockContentEnd();
   }
 
@@ -437,6 +453,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.lines[Math.max(0, this.lines.length - 1)] = "> " + line;
     }
 
+    visitor.restoreState(this);
     this.pushBlockContentEnd();
   }
 
@@ -458,6 +475,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.pushEndOfLineIfAnyContent();
       this.lines[Math.max(0, this.lines.length - 1)] = "> " + line;
     }
+    visitor.restoreState(this);
     this.pushBlockContentEnd();
   }
 
@@ -481,6 +499,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           " ".repeat(this.width - 2 - line.length) + line + " |";
       }
     }
+    visitor.restoreState(this);
     this.pushBlockContentEnd();
   }
 
@@ -530,6 +549,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushText("\\");
     this.pushText("-".repeat(this.width - 2));
     this.pushText("/");
+    visitor.restoreState(this);
     this.pushBlockContentEnd();
   }
 
@@ -570,6 +590,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         this.pushLine();
         this.pushText("|" + "-".repeat(this.width - 2) + "|");
       }
+      centerVisitor.restoreState(this);
     }
 
     const contentVisitor = new FixedWidthTextVisitor(this.width - 4);
@@ -622,6 +643,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushText("\\");
     this.pushText("-".repeat(this.width - 2));
     this.pushText("/");
+    contentVisitor.restoreState(this);
     this.pushBlockContentEnd();
   }
 
@@ -653,7 +675,105 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.lines[Math.max(0, this.lines.length - 1)] = "  " + line;
     }
 
+    visitor.restoreState(this);
+
     this.pushBlockContentEnd();
+  }
+
+  protected toc(node: TableOfContentsNode): void {
+    if (this.state.tocDepth > 0) {
+      const visitor = new FixedWidthTextVisitor(this.width - 3);
+      visitor.setState({ ...this.state, tocDepth: this.state.tocDepth + 1});
+
+      if (node.date) {
+        visitor.choose(node.date);
+        visitor.pushText(' ');
+      }
+      visitor.chooseChildren(node.content);
+      if (node.href && !node.href.startsWith('#')) {
+        visitor.link({
+          type: 'link',
+          url: node.href,
+          content: []
+        })
+        visitor.spaceLazy = true;
+      }
+
+      let counter = 0;
+      for (const line of visitor.getLines()) {
+        this.pushEndOfLineIfAnyContent();
+
+        // First line gets a bullet point
+        if (counter == 0) {
+          this.lines[Math.max(0, this.lines.length - 1)] = "* " + line;
+        } else {
+          this.lines[Math.max(0, this.lines.length - 1)] = "  " + line;
+        }
+
+        counter++;
+      }
+
+      visitor.restoreState(this);
+
+      visitor.visit({
+        type: "array",
+        content: node.children,
+      });
+      for (const line of visitor.getLines()) {
+        this.pushEndOfLineIfAnyContent();
+        this.lines[Math.max(0, this.lines.length - 1)] = " " + line;
+      }
+      visitor.restoreState(this);
+    } else {
+      const visitor = new FixedWidthTextVisitor(this.width - 4);
+
+      visitor.setState({ ...this.state, tocDepth: this.state.tocDepth + 1});
+
+      if (node.date) {
+        visitor.choose(node.date);
+        visitor.pushText(' ');
+      }
+
+      visitor.chooseChildren(node.content);
+      if (node.href && !node.href.startsWith('#')) {
+        visitor.link({
+          type: 'link',
+          url: node.href,
+          content: []
+        })
+        visitor.spaceLazy = true;
+      }
+      visitor.pushLine();
+
+      visitor.visit({
+        type: "array",
+        content: node.children,
+      });
+
+      const tocLen = ' Table of contents '.length;
+      const lines = visitor.getLines();
+      const maxLength = lines.reduce((prev, next) => Math.max(prev, next.length + 1), tocLen + 2);
+
+      const left = Math.floor((maxLength - tocLen)/2) + 1;
+      const right = maxLength - tocLen - left + 1;
+
+      this.pushBlockContentBegin();
+
+      this.lines[Math.max(0, this.lines.length - 1)] = '/' + '-'.repeat(left) + ' Table of contents ' + '-'.repeat(right) + '\\';
+
+      for (const line of visitor.getLines()) {
+        this.pushEndOfLineIfAnyContent();
+        this.lines[Math.max(0, this.lines.length - 1)] = "| " + line + ' '.repeat(maxLength - line.length) + '|';
+      }
+
+      this.lines[Math.max(0, this.lines.length - 1)] = '\\' + '-'.repeat(maxLength + 1) + '/';
+
+      visitor.restoreState(this);
+
+      this.pushBlockContentEnd();
+    }
+
+
   }
 
   protected document(node: DocumentNode): void {
@@ -683,8 +803,9 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     super.document(node);
     this.horizontalRule({ type: "horizontal-rule" });
     if (this.state.linkCount > 0) {
-      const length = Math.max(7, `[L${this.state.linkCount}]: `.length);
-      for (let i = 1; i <= this.state.linkCount; i++) {
+      const max = this.state.linkCount;
+      const length = Math.max(7, `[L${max}]: `.length);
+      for (let i = 1; i <= max; i++) {
         const label = `[L${i}]: `;
         const visitor = new FixedWidthTextVisitor(this.width - length);
         visitor.text({
