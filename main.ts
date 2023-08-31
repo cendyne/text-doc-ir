@@ -683,19 +683,19 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   protected toc(node: TableOfContentsNode): void {
     if (this.state.tocDepth > 0) {
       const visitor = new FixedWidthTextVisitor(this.width - 3);
-      visitor.setState({ ...this.state, tocDepth: this.state.tocDepth + 1});
+      visitor.setState({ ...this.state, tocDepth: this.state.tocDepth + 1 });
 
       if (node.date) {
         visitor.choose(node.date);
-        visitor.pushText(' ');
+        visitor.pushText(" ");
       }
       visitor.chooseChildren(node.content);
-      if (node.href && !node.href.startsWith('#')) {
+      if (node.href && !node.href.startsWith("#")) {
         visitor.link({
-          type: 'link',
+          type: "link",
           url: node.href,
-          content: []
-        })
+          content: [],
+        });
         visitor.spaceLazy = true;
       }
 
@@ -727,20 +727,20 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     } else {
       const visitor = new FixedWidthTextVisitor(this.width - 4);
 
-      visitor.setState({ ...this.state, tocDepth: this.state.tocDepth + 1});
+      visitor.setState({ ...this.state, tocDepth: this.state.tocDepth + 1 });
 
       if (node.date) {
         visitor.choose(node.date);
-        visitor.pushText(' ');
+        visitor.pushText(" ");
       }
 
       visitor.chooseChildren(node.content);
-      if (node.href && !node.href.startsWith('#')) {
+      if (node.href && !node.href.startsWith("#")) {
         visitor.link({
-          type: 'link',
+          type: "link",
           url: node.href,
-          content: []
-        })
+          content: [],
+        });
         visitor.spaceLazy = true;
       }
       visitor.pushLine();
@@ -750,30 +750,34 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         content: node.children,
       });
 
-      const tocLen = ' Table of contents '.length;
+      const tocLen = " Table of contents ".length;
       const lines = visitor.getLines();
-      const maxLength = lines.reduce((prev, next) => Math.max(prev, next.length + 1), tocLen + 2);
+      const maxLength = lines.reduce(
+        (prev, next) => Math.max(prev, next.length + 1),
+        tocLen + 2,
+      );
 
-      const left = Math.floor((maxLength - tocLen)/2) + 1;
+      const left = Math.floor((maxLength - tocLen) / 2) + 1;
       const right = maxLength - tocLen - left + 1;
 
       this.pushBlockContentBegin();
 
-      this.lines[Math.max(0, this.lines.length - 1)] = '/' + '-'.repeat(left) + ' Table of contents ' + '-'.repeat(right) + '\\';
+      this.lines[Math.max(0, this.lines.length - 1)] = "/" + "-".repeat(left) +
+        " Table of contents " + "-".repeat(right) + "\\";
 
       for (const line of visitor.getLines()) {
         this.pushEndOfLineIfAnyContent();
-        this.lines[Math.max(0, this.lines.length - 1)] = "| " + line + ' '.repeat(maxLength - line.length) + '|';
+        this.lines[Math.max(0, this.lines.length - 1)] = "| " + line +
+          " ".repeat(maxLength - line.length) + "|";
       }
 
-      this.lines[Math.max(0, this.lines.length - 1)] = '\\' + '-'.repeat(maxLength + 1) + '/';
+      this.lines[Math.max(0, this.lines.length - 1)] = "\\" +
+        "-".repeat(maxLength + 1) + "/";
 
       visitor.restoreState(this);
 
       this.pushBlockContentEnd();
     }
-
-
   }
 
   protected document(node: DocumentNode): void {
