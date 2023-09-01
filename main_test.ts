@@ -1799,12 +1799,12 @@ Deno.test({
       definitions: [
         {
           type: "definition",
-          abbreviation: [{type: "text", text: "DEF"}],
-          title: [{type: "text", text: "Definition"}],
-          content: [{type: "text", text: "A definition here"}],
-          key: "def"
-        }
-      ]
+          abbreviation: [{ type: "text", text: "DEF" }],
+          title: [{ type: "text", text: "Definition" }],
+          content: [{ type: "text", text: "A definition here" }],
+          key: "def",
+        },
+      ],
     });
     assertEquals(visitor.getLines(), [
       "             Example Title",
