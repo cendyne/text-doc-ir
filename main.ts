@@ -800,9 +800,18 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         { type: "horizontal-rule" },
       ],
     });
-    super.document(node);
+    this.beforeBlock();
+    this.chooseChildren(node.content);
+    this.afterBlock();
     this.horizontalRule({ type: "horizontal-rule" });
+    this.beforeBlock();
+    if (node.definitions) {
+      this.chooseChildren(node.definitions);
+    }
+    this.afterBlock();
+    this.pushLine();
     if (this.state.linkCount > 0) {
+      this.beforeBlock();
       const max = this.state.linkCount;
       const length = Math.max(7, `[L${max}]: `.length);
       for (let i = 1; i <= max; i++) {
@@ -822,9 +831,15 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           }
         }
       }
+      if (this.state.imageCount == 0) {
+        this.afterBlock();
+      }
     }
 
     if (this.state.imageCount > 0) {
+      if (this.state.linkCount == 0) {
+        this.beforeBlock();
+      }
       const length = Math.max(7, `[L${this.state.imageCount}]: `.length);
       for (let i = 1; i <= this.state.imageCount; i++) {
         const label = `[I${i}]: `;
@@ -844,6 +859,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         }
       }
     }
+    this.afterBlock();
   }
 
   private counterToDepth(counter: number): string {

@@ -1796,6 +1796,15 @@ Deno.test({
             "https://media.tech.lgbt/media_attachments/files/110/588/972/540/677/028/original/b962a00b667e6b0b.png",
         },
       ],
+      definitions: [
+        {
+          type: "definition",
+          abbreviation: [{type: "text", text: "DEF"}],
+          title: [{type: "text", text: "Definition"}],
+          content: [{type: "text", text: "A definition here"}],
+          key: "def"
+        }
+      ]
     });
     assertEquals(visitor.getLines(), [
       "             Example Title",
@@ -1810,6 +1819,82 @@ Deno.test({
       "[I1: Example Image]",
       "",
       "----------------------------------------",
+      "",
+      "Definition (DEF):",
+      "  A definition here",
+      "",
+      " [L1]: https://whatever.example/",
+      " [L2]: https://cendyne.dev/posts/2023-06",
+      "       -20-twitters-bot-problem-is-",
+      "       getting-weird-with-chatgpt.json",
+      " [I1]: https://media.tech.lgbt/media_",
+      "       attachments/files/110/588/972/540",
+      "       /677/028/original/",
+      "       b962a00b667e6b0b.png",
+    ]);
+  },
+});
+
+Deno.test({
+  name: "Document - 2",
+  fn() {
+    const visitor = new FixedWidthTextVisitor(40);
+    visitor.visit({
+      type: "document",
+      title: "Example Title",
+      url: "/example",
+      content: [
+        {
+          type: "toc",
+          content: [{ type: "text", text: "Top Level Heading" }],
+          hrefHtmlId: "id-here",
+          date: {
+            type: "date",
+            isoDate: "2023-01-01",
+            content: [{ type: "text", text: "January 1st" }],
+          },
+          children: [
+            {
+              type: "toc",
+              content: [{ type: "text", text: "Sub Heading" }],
+              href: "https://whatever.example/",
+              children: [],
+            },
+          ],
+        },
+        { type: "text", text: "Lorem " },
+        {
+          type: "link",
+          url:
+            "https://cendyne.dev/posts/2023-06-20-twitters-bot-problem-is-getting-weird-with-chatgpt.json",
+          content: [{
+            type: "text",
+            text: "ipsum dolor",
+          }],
+        },
+        { type: "text", text: "sit amet." },
+        {
+          type: "image",
+          alt: "Example Image",
+          url:
+            "https://media.tech.lgbt/media_attachments/files/110/588/972/540/677/028/original/b962a00b667e6b0b.png",
+        },
+      ],
+    });
+    assertEquals(visitor.getLines(), [
+      "             Example Title",
+      "----------------------------------------",
+      "",
+      "/------ Table of contents ------\\",
+      "| January 1st Top Level Heading |",
+      "| * Sub Heading [L1]            |",
+      "\\-------------------------------/",
+      "",
+      "Lorem ipsum dolor [L2] sit amet.",
+      "[I1: Example Image]",
+      "",
+      "----------------------------------------",
+      "",
       " [L1]: https://whatever.example/",
       " [L2]: https://cendyne.dev/posts/2023-06",
       "       -20-twitters-bot-problem-is-",
