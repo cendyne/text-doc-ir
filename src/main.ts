@@ -1,5 +1,5 @@
 import { encodeBase, LOWER_ALPHA, UPPER_ALPHA } from "./baseEncoder.ts";
-import {
+import type {
   BlockQuoteNode,
   BreakNode,
   BubbleNode,
@@ -20,7 +20,6 @@ import {
   LinkNode,
   ListNode,
   Node,
-  NodeVisitor,
   NoteNode,
   ParagraphNode,
   QuoteNode,
@@ -30,7 +29,8 @@ import {
   TextNode,
   VideoNode,
   WarningNode,
-} from "./deps.ts";
+} from "document-ir";
+import { NodeVisitor } from "document-ir";
 
 interface TextVisitingState {
   images: Map<string, string>;
@@ -96,15 +96,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  // deno-lint-ignore no-unused-vars
-  protected horizontalRule(node: HorizontalRuleNode): void {
+  protected horizontalRule(_node: HorizontalRuleNode): void {
     this.pushBlockContentBegin();
     this.pushText("-".repeat(this.width));
     this.pushBlockContentEnd();
   }
 
-  // deno-lint-ignore no-unused-vars
-  protected break_(node: BreakNode): void {
+  protected break_(_node: BreakNode): void {
     this.breakCount++;
   }
 

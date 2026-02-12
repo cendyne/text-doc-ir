@@ -1,0 +1,58 @@
+{
+  "name": "text-doc-ir",
+  "version": "0.0.14",
+  "type": "module",
+  "license": "MIT",
+  "description": "Transforms a document intermediate representation into plain text with formatting",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cendyne/text-doc-ir.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cendyne/text-doc-ir/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "document",
+    "ir",
+    "text",
+    "fixed-width",
+    "plain-text"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "prepublishOnly": "bun run build",
+    "type-check": "bunx tsc --noEmit",
+    "test": "bun test",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "document-ir": "0.0.15"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "oxlint": "^1.46.0",
+    "typescript": "^5.9.0",
+    "unplugin-dts": "^1.0.0-beta.6",
+    "vite": "^5.4.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
