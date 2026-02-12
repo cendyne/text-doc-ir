@@ -1810,3 +1810,474 @@ test("Table of Contents - 2", () => {
     "\\-------------------------------/",
   ]);
 });
+
+// === Phase 9: Comprehensive Tests for New Node Types ===
+
+// 1. Inline Formatting
+
+test("SuperText renders with ^()", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      { type: "text", text: "E = mc" },
+      { type: "super", content: [{ type: "text", text: "2" }] },
+    ],
+  });
+  expect(visitor.getLines()).toEqual(["E = mc^(2)"]);
+});
+
+test("SubText renders with _()", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      { type: "text", text: "H" },
+      { type: "sub", content: [{ type: "text", text: "2" }] },
+      { type: "text", text: "O" },
+    ],
+  });
+  expect(visitor.getLines()).toEqual(["H_(2)O"]);
+});
+
+test("Secret renders as spoiler", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "secret",
+    content: [{ type: "text", text: "hidden text" }],
+  });
+  expect(visitor.getLines()).toEqual(["[SPOILER: hidden text]"]);
+});
+
+test("Redacted inline", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      { type: "text", text: "Name: " },
+      { type: "redacted", style: "inline", content: [{ type: "text", text: "John" }] },
+    ],
+  });
+  expect(visitor.getLines()).toEqual(["Name: [REDACTED]"]);
+});
+
+test("Redacted block", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "redacted",
+    style: "block",
+    content: [{ type: "text", text: "classified" }],
+  });
+  expect(visitor.getLines()).toEqual(["[REDACTED]"]);
+});
+
+test("Pill renders with brackets", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      { type: "text", text: "Status: " },
+      { type: "pill", color: "green", content: [{ type: "text", text: "Active" }] },
+    ],
+  });
+  expect(visitor.getLines()).toEqual(["Status: [Active]"]);
+});
+
+// 2. Temporal Nodes
+
+test("Date renders children only", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "date",
+    isoDate: "2024-01-15",
+    content: [{ type: "text", text: "January 15, 2024" }],
+  });
+  expect(visitor.getLines()).toEqual(["January 15, 2024"]);
+});
+
+test("TimeRange renders children without metadata", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "time-range",
+    notBefore: "2024-01-01",
+    notAfter: "2024-12-31",
+    content: [
+      { type: "paragraph", content: [{ type: "text", text: "Limited time offer!" }] },
+    ],
+  });
+  expect(visitor.getLines()).toEqual(["Limited time offer!"]);
+});
+
+// 3. Social Nodes
+
+test("Tweet renders as link", () => {
+  const visitor = new FixedWidthTextVisitor(80);
+  visitor.visit({
+    type: "document",
+    title: "Test",
+    url: "https://example.com",
+    content: [
+      { type: "paragraph", content: [
+        { type: "tweet", id: "123456789" },
+      ]},
+    ],
+  });
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("Tweet"))).toBe(true);
+  expect(lines.some(l => l.includes("twitter.com/i/status/123456789"))).toBe(true);
+});
+
+test("Youtube renders as link", () => {
+  const visitor = new FixedWidthTextVisitor(80);
+  visitor.visit({
+    type: "document",
+    title: "Test",
+    url: "https://example.com",
+    content: [
+      { type: "paragraph", content: [
+        { type: "youtube", id: "dQw4w9WgXcQ" },
+      ]},
+    ],
+  });
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("Youtube Video"))).toBe(true);
+  expect(lines.some(l => l.includes("youtu.be/dQw4w9WgXcQ"))).toBe(true);
+});
+
+// 4. Standard Node
+
+test("Standard node renders reference", () => {
+  const visitor = new FixedWidthTextVisitor(80);
+  visitor.visit({
+    type: "document",
+    title: "Test",
+    url: "https://example.com",
+    content: [
+      { type: "paragraph", content: [
+        { type: "standard", standard: "RFC", identifier: "7231", url: "https://tools.ietf.org/html/rfc7231", content: [] },
+      ]},
+    ],
+  });
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("RFC 7231"))).toBe(true);
+  expect(lines.some(l => l.includes("tools.ietf.org"))).toBe(true);
+});
+
+// 5. Code Node (basic)
+
+test("Code node renders formatted text", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "code",
+    content: [
+      { type: "formatted-text", text: "const x = 1;\nconst y = 2;", language: "typescript" },
+    ],
+  });
+  const lines = visitor.getLines();
+  expect(lines).toContain("const x = 1;");
+  expect(lines).toContain("const y = 2;");
+});
+
+// 6. Code with Line Numbers
+
+test("Code with line numbers", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "code",
+    lineNumbers: true,
+    content: [
+      { type: "formatted-text", text: "line one\nline two\nline three" },
+    ],
+  });
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("1 | line one"))).toBe(true);
+  expect(lines.some(l => l.includes("2 | line two"))).toBe(true);
+  expect(lines.some(l => l.includes("3 | line three"))).toBe(true);
+});
+
+// 7. Code with Diff
+
+test("Code with diff markers", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "code",
+    diff: true,
+    content: [
+      { type: "formatted-text", text: " context line\n-removed line\n+added line" },
+    ],
+  });
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("  context line"))).toBe(true);
+  expect(lines.some(l => l.includes("- removed line"))).toBe(true);
+  expect(lines.some(l => l.includes("+ added line"))).toBe(true);
+});
+
+// 8. Code with Diff + Line Numbers
+
+test("Code with diff and line numbers", () => {
+  const visitor = new FixedWidthTextVisitor(60);
+  visitor.visit({
+    type: "code",
+    diff: true,
+    lineNumbers: true,
+    content: [
+      { type: "formatted-text", text: " context\n-old line\n+new line\n another context" },
+    ],
+  });
+  const lines = visitor.getLines();
+  // Context lines should have both old and new line numbers
+  // Removed lines should have only old number
+  // Added lines should have only new number
+  // Verify line numbers are present
+  const hasOldAndNew = lines.some(l => /\d+\s+\d+\s+/.test(l));
+  expect(hasOldAndNew).toBe(true);
+});
+
+// 9. Code Block with fileName
+
+test("CodeBlock with fileName", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "code-block",
+    fileName: "hello.ts",
+    content: {
+      type: "code",
+      content: [
+        { type: "formatted-text", text: "console.log('hello');" },
+      ],
+    },
+  } as any);
+  const lines = visitor.getLines();
+  // Should have bordered box with fileName
+  expect(lines.some(l => l.includes("hello.ts"))).toBe(true);
+  expect(lines.some(l => l.startsWith("/"))).toBe(true);
+  expect(lines.some(l => l.startsWith("\\"))).toBe(true);
+  expect(lines.some(l => l.includes("console.log"))).toBe(true);
+});
+
+// 10. Collapsed CodeBlock
+
+test("CodeBlock collapsed", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "code-block",
+    fileName: "config.json",
+    collapsable: true,
+    collapsed: true,
+    content: {
+      type: "code",
+      content: [
+        { type: "formatted-text", text: '{"key": "value"}' },
+      ],
+    },
+  } as any);
+  const lines = visitor.getLines();
+  expect(lines).toEqual(["[Collapsed: config.json]"]);
+});
+
+// 11. Code Group
+
+test("CodeGroup with multiple tabs", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "code-group",
+    tabs: [
+      {
+        type: "code-group-tab",
+        header: [{ type: "text", text: "JavaScript" }],
+        content: {
+          type: "code",
+          content: [{ type: "formatted-text", text: "const x = 1;" }],
+        },
+      },
+      {
+        type: "code-group-tab",
+        header: [{ type: "text", text: "Python" }],
+        content: {
+          type: "code",
+          content: [{ type: "formatted-text", text: "x = 1" }],
+        },
+      },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("JavaScript"))).toBe(true);
+  expect(lines.some(l => l.includes("Python"))).toBe(true);
+  expect(lines.some(l => l.includes("const x = 1;"))).toBe(true);
+  expect(lines.some(l => l.includes("x = 1"))).toBe(true);
+});
+
+// 12. Table
+
+test("Simple table", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "table",
+    content: [
+      [
+        { type: "table-cell", header: true, span: [1, 1], content: [{ type: "text", text: "Name" }] },
+        { type: "table-cell", header: true, span: [1, 1], content: [{ type: "text", text: "Age" }] },
+      ],
+      [
+        { type: "table-cell", span: [1, 1], content: [{ type: "text", text: "Alice" }] },
+        { type: "table-cell", span: [1, 1], content: [{ type: "text", text: "30" }] },
+      ],
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  // Should have borders
+  expect(lines.some(l => l.includes("+"))).toBe(true);
+  // Header row should use = separator
+  expect(lines.some(l => l.includes("="))).toBe(true);
+  // Data should be present
+  expect(lines.some(l => l.includes("Name"))).toBe(true);
+  expect(lines.some(l => l.includes("Alice"))).toBe(true);
+  expect(lines.some(l => l.includes("30"))).toBe(true);
+});
+
+// 13. Accordion
+
+test("Accordion open tab", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "accordion-group",
+    tabs: [
+      {
+        type: "accordion-tab",
+        header: [{ type: "text", text: "Details" }],
+        content: [{ type: "paragraph", content: [{ type: "text", text: "Some details here" }] }],
+        open: true,
+      },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("Details"))).toBe(true);
+  expect(lines.some(l => l.includes("Some details here"))).toBe(true);
+});
+
+test("Accordion collapsed tab", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "accordion-group",
+    tabs: [
+      {
+        type: "accordion-tab",
+        header: [{ type: "text", text: "FAQ" }],
+        content: [{ type: "paragraph", content: [{ type: "text", text: "Answer" }] }],
+        open: false,
+      },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  expect(lines).toEqual(["[Collapsed: FAQ]"]);
+});
+
+// 14. Figure with Caption
+
+test("Figure with image and caption", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "figure",
+    content: [
+      { type: "image", url: "https://example.com/img.png", alt: "A photo" },
+      { type: "figure-caption", content: [{ type: "text", text: "Figure 1: A photo" }] },
+    ],
+  });
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("A photo"))).toBe(true);
+  expect(lines.some(l => l.includes("Figure 1"))).toBe(true);
+});
+
+// 15. Region passes through
+
+test("Region renders children without metadata", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "region",
+    mode: "allow",
+    regions: "US",
+    content: [{ type: "paragraph", content: [{ type: "text", text: "US only content" }] }],
+  });
+  const lines = visitor.getLines();
+  expect(lines).toEqual(["US only content"]);
+  // Should NOT contain "allow" as metadata
+  expect(lines.every(l => !l.includes("allow"))).toBe(true);
+});
+
+// 16. Style and Script are omitted
+
+test("Style node produces no output", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "array",
+    content: [
+      { type: "style", source: "body { color: red }" },
+      { type: "paragraph", content: [{ type: "text", text: "visible" }] },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("visible"))).toBe(true);
+  expect(lines.every(l => !l.includes("color"))).toBe(true);
+});
+
+// 17. Definition List
+
+test("Definition list renders each definition", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "definition-list",
+    content: [
+      {
+        type: "definition",
+        key: "html",
+        title: [{ type: "text", text: "HTML" }],
+        abbreviation: [{ type: "text", text: "HTML" }],
+        content: [{ type: "text", text: "HyperText Markup Language" }],
+      },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("HTML"))).toBe(true);
+  expect(lines.some(l => l.includes("HyperText Markup Language"))).toBe(true);
+});
+
+// 18. Comprehensibility check at 80 chars
+
+test("Complex document at 80 chars is readable", () => {
+  const visitor = new FixedWidthTextVisitor(80);
+  visitor.visit({
+    type: "document",
+    title: "Test Document",
+    url: "https://example.com",
+    description: "A test document with various node types",
+    content: [
+      { type: "header", level: 1, content: [{ type: "text", text: "Introduction" }] },
+      { type: "paragraph", content: [
+        { type: "text", text: "This is a test of various features including " },
+        { type: "bold", content: [{ type: "text", text: "bold text" }] },
+        { type: "text", text: " and " },
+        { type: "italic", content: [{ type: "text", text: "italic text" }] },
+        { type: "text", text: "." },
+      ]},
+      { type: "table", content: [
+        [
+          { type: "table-cell", header: true, span: [1,1], content: [{ type: "text", text: "Feature" }] },
+          { type: "table-cell", header: true, span: [1,1], content: [{ type: "text", text: "Status" }] },
+        ],
+        [
+          { type: "table-cell", span: [1,1], content: [{ type: "text", text: "Tables" }] },
+          { type: "table-cell", span: [1,1], content: [{ type: "text", text: "Working" }] },
+        ],
+      ]},
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  // Every line should be within width
+  for (const line of lines) {
+    expect(line.length).toBeLessThanOrEqual(80);
+  }
+  // Should contain key content
+  expect(lines.some(l => l.includes("Introduction"))).toBe(true);
+  expect(lines.some(l => l.includes("bold text"))).toBe(true);
+  expect(lines.some(l => l.includes("Feature"))).toBe(true);
+});
