@@ -16,3 +16,4 @@ out
 dist
 npm/
 TASKS.md
+test*.json
