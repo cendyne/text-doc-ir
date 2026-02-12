@@ -5,32 +5,85 @@ import type {
   BubbleNode,
   CardNode,
   CenterNode,
+  CodeNode,
   ColumnsNode,
+  DateNode,
+  DateTimeNode,
+  DefinitionListNode,
   DefinitionNode,
   DefinitionReferenceNode,
   DocumentNode,
   EmbedNode,
   EmojiNode,
+  FigureCaptionNode,
   FigureImageNode,
+  FigureNode,
   FormattedTextNode,
   HeaderNode,
   HighTechAlertNode,
   HorizontalRuleNode,
   ImageNode,
+  ItalicNode,
   LinkNode,
   ListNode,
   Node,
   NoteNode,
   ParagraphNode,
   QuoteNode,
+  RedactedNode,
+  RegionNode,
+  SmallerNode,
+  SocialNode,
+  StandardNode,
   StickerNode,
   StrikeThroughNode,
+  SubTextNode,
+  SuperTextNode,
+  TableCellNode,
+  TableNode,
   TableOfContentsNode,
   TextNode,
+  TimeNode,
+  TimeRangeNode,
+  UnderlineNode,
   VideoNode,
   WarningNode,
 } from "document-ir";
 import { NodeVisitor } from "document-ir";
+
+// Types for node kinds not yet in document-ir's type system
+// but which appear in real documents and need dispatch.
+interface CodeBlockNode {
+  type: "code-block";
+  content: Node;
+  language?: string;
+}
+
+interface CodeGroupTabNode {
+  header: Node[];
+  content: Node;
+}
+
+interface CodeGroupNode {
+  type: "code-group";
+  tabs: CodeGroupTabNode[];
+}
+
+interface AccordionTabNode {
+  type: "accordion-tab";
+  header: Node[];
+  content: Node[];
+}
+
+interface AccordionGroupNode {
+  type: "accordion-group";
+  tabs: AccordionTabNode[];
+}
+
+interface PillNode {
+  type: "pill";
+  content: Node[];
+}
 
 interface TextVisitingState {
   images: Map<string, string>;
@@ -80,6 +133,63 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   private restoreState(parent: FixedWidthTextVisitor) {
     parent.state.imageCount = this.state.imageCount;
     parent.state.linkCount = this.state.linkCount;
+  }
+
+  protected override choose(node: Node): void {
+    switch ((node as { type: string }).type) {
+      case "code-block":
+        return this.codeBlock(node as unknown as CodeBlockNode);
+      case "code-group":
+        return this.codeGroup(node as unknown as CodeGroupNode);
+      case "accordion-group":
+        return this.accordionGroup(node as unknown as AccordionGroupNode);
+      case "accordion-tab":
+        return this.accordionTab(node as unknown as AccordionTabNode);
+      case "pill":
+        return this.pill(node as unknown as PillNode);
+      case "style":
+        // Omit styles entirely
+        return;
+      case "script":
+        // Omit scripts entirely
+        return;
+      default:
+        return super.choose(node);
+    }
+  }
+
+  protected codeBlock(node: CodeBlockNode): void {
+    this.pushBlockContentBegin();
+    this.choose(node.content);
+    this.pushBlockContentEnd();
+  }
+
+  protected codeGroup(node: CodeGroupNode): void {
+    for (const tab of node.tabs) {
+      this.pushBlockContentBegin();
+      this.chooseChildren(tab.header);
+      this.choose(tab.content);
+      this.pushBlockContentEnd();
+    }
+  }
+
+  protected accordionGroup(node: AccordionGroupNode): void {
+    for (const tab of node.tabs) {
+      this.accordionTab(tab);
+    }
+  }
+
+  protected accordionTab(node: AccordionTabNode): void {
+    this.pushBlockContentBegin();
+    this.chooseChildren(node.header);
+    this.chooseChildren(node.content);
+    this.pushBlockContentEnd();
+  }
+
+  protected pill(node: PillNode): void {
+    this.pushText("[");
+    this.chooseChildren(node.content);
+    this.pushText("]");
   }
 
   protected override text(node: TextNode): void {
