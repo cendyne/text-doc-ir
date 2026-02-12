@@ -3,6 +3,7 @@ import type {
   AccordionGroupNode,
   AccordionTabNode,
   BlockQuoteNode,
+  BoldNode,
   BreakNode,
   BubbleNode,
   CardNode,
@@ -37,6 +38,7 @@ import type {
   QuoteNode,
   RedactedNode,
   RegionNode,
+  SecretNode,
   SmallerNode,
   SocialNode,
   StandardNode,
@@ -424,6 +426,198 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushText("(Strike through: ");
     super.strikeThrough(node);
     this.pushText(")");
+  }
+
+  protected override superText(node: SuperTextNode): void {
+    this.pushText("^(");
+    super.superText(node);
+    this.pushText(")");
+  }
+
+  protected override subText(node: SubTextNode): void {
+    this.pushText("_(");
+    super.subText(node);
+    this.pushText(")");
+  }
+
+  protected override secret(node: SecretNode): void {
+    this.pushText("[SPOILER: ");
+    this.chooseChildren(node.content);
+    this.pushText("]");
+  }
+
+  protected override redacted(node: RedactedNode): void {
+    if (node.style === "block") {
+      this.pushBlockContentBegin();
+      this.pushText("[REDACTED]");
+      this.pushBlockContentEnd();
+    } else {
+      this.pushText("[REDACTED]");
+    }
+  }
+
+  protected override date(node: DateNode): void {
+    this.chooseChildren(node.content);
+  }
+
+  protected override time(node: TimeNode): void {
+    this.chooseChildren(node.content);
+  }
+
+  protected override datetime(node: DateTimeNode): void {
+    this.chooseChildren(node.content);
+  }
+
+  protected override timeRange(node: TimeRangeNode): void {
+    this.chooseChildren(node.content);
+  }
+
+  protected override figure(node: FigureNode): void {
+    this.pushBlockContentBegin();
+    this.chooseChildren(node.content);
+    this.pushBlockContentEnd();
+  }
+
+  protected override figureCaption(node: FigureCaptionNode): void {
+    this.pushBlockContentBegin();
+    this.pushText("  ");
+    this.eatSpaces = false;
+    this.chooseChildren(node.content);
+    this.pushBlockContentEnd();
+  }
+
+  protected override definitionList(node: DefinitionListNode): void {
+    for (const def of node.content) {
+      this.definition(def);
+    }
+  }
+
+  protected override region(node: RegionNode): void {
+    this.chooseChildren(node.content);
+  }
+
+  protected override social(node: SocialNode): void {
+    switch (node.type) {
+      case "tweet":
+        this.link({
+          type: "link",
+          url: `https://twitter.com/i/status/${node.id}`,
+          content: [{ type: "text", text: "Tweet" }],
+        });
+        break;
+      case "toot":
+        this.link({
+          type: "link",
+          url: node.id,
+          content: [{ type: "text", text: "Toot" }],
+        });
+        break;
+      case "vimeo":
+        this.link({
+          type: "link",
+          url: `https://vimeo.com/${node.id}`,
+          content: [{ type: "text", text: "Vimeo Video" }],
+        });
+        break;
+      case "youtube":
+        this.link({
+          type: "link",
+          url: `https://youtu.be/${node.id}`,
+          content: [{ type: "text", text: "Youtube Video" }],
+        });
+        break;
+    }
+  }
+
+  protected override standard(node: StandardNode): void {
+    this.pushText(`${node.standard} ${node.identifier}`);
+    if (node.url) {
+      this.spaceLazy = true;
+      this.link({
+        type: "link",
+        url: node.url,
+        content: [],
+      });
+    }
+    if (node.content.length > 0) {
+      this.pushText(" ");
+      this.chooseChildren(node.content);
+    }
+  }
+
+  protected override table(node: TableNode): void {
+    this.pushBlockContentBegin();
+
+    // First, render each cell's content to determine column widths
+    const rows: string[][][] = []; // rows[row][col] = lines[]
+    const colCount = Math.max(...node.content.map(row => row.length));
+    const colWidths: number[] = new Array(colCount).fill(0);
+    const isHeaderRow: boolean[] = [];
+
+    for (const row of node.content) {
+      const renderedRow: string[][] = [];
+      let hasHeader = false;
+      for (let c = 0; c < row.length; c++) {
+        const cell = row[c]!;
+        if (cell.header) hasHeader = true;
+        // Reserve space for borders: | col | col | = colCount * 3 + 1
+        const availWidth = Math.max(
+          5,
+          Math.floor((this.width - colCount * 3 - 1) / colCount),
+        );
+        const visitor = new FixedWidthTextVisitor(availWidth);
+        visitor.setState({ ...this.state, numericDepth: 0 });
+        visitor.visit({ type: "array", content: cell.content });
+        const lines = [...visitor.getLines()];
+        renderedRow.push(lines);
+        const maxLineLen = Math.max(...lines.map((l) => l.length), 0);
+        colWidths[c] = Math.max(colWidths[c]!, maxLineLen);
+        visitor.restoreState(this);
+      }
+      rows.push(renderedRow);
+      isHeaderRow.push(hasHeader);
+    }
+
+    // Ensure minimum width
+    for (let c = 0; c < colCount; c++) {
+      colWidths[c] = Math.max(colWidths[c]!, 3);
+    }
+
+    // Helper to draw a separator line
+    const separator = (char: string) => {
+      return "+" +
+        colWidths.map((w) => char.repeat(w + 2)).join("+") + "+";
+    };
+
+    // Render the table
+    this.pushText(separator("-"));
+
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r]!;
+      const maxLines = Math.max(...row.map((cell) => cell.length), 1);
+
+      for (let line = 0; line < maxLines; line++) {
+        this.pushLine();
+        let rowText = "|";
+        for (let c = 0; c < colCount; c++) {
+          const cellLines = row[c] || [];
+          const cellLine = cellLines[line] || "";
+          const width = colWidths[c]!;
+          rowText += " " + cellLine +
+            " ".repeat(width - cellLine.length) + " |";
+        }
+        this.pushText(rowText);
+      }
+
+      this.pushLine();
+      if (isHeaderRow[r]) {
+        this.pushText(separator("="));
+      } else {
+        this.pushText(separator("-"));
+      }
+    }
+
+    this.pushBlockContentEnd();
   }
 
   protected override note(node: NoteNode): void {
