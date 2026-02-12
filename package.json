@@ -40,7 +40,8 @@
     "prepublishOnly": "bun run build",
     "type-check": "bunx tsc --noEmit",
     "test": "bun test",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "to-text": "bun src/to-text.ts"
   },
   "dependencies": {
     "document-ir": "0.3.0"

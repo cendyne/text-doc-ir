@@ -130,6 +130,17 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   }
 
   protected override code(node: CodeNode): void {
+    if (node.diff || node.lineNumbers) {
+      this.codeAsBlock(node);
+    } else {
+      // Inline code — just render children with backtick decoration
+      this.pushText("`");
+      this.chooseChildren(node.content);
+      this.pushText("`");
+    }
+  }
+
+  protected codeAsBlock(node: CodeNode): void {
     // Collect text from children
     const textVisitor = new FixedWidthTextVisitor(this.width);
     textVisitor.setState({ ...this.state, numericDepth: 0 });
@@ -160,7 +171,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     // Render the code content first to get the lines
     const codeVisitor = new FixedWidthTextVisitor(this.width - 4);
     codeVisitor.setState({ ...this.state, numericDepth: 0 });
-    codeVisitor.code(node.content);
+    codeVisitor.codeAsBlock(node.content);
     const codeLines = codeVisitor.getLines();
     codeVisitor.restoreState(this);
 
@@ -204,7 +215,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       // Render code content
       const codeVisitor = new FixedWidthTextVisitor(this.width - 4);
       codeVisitor.setState({ ...this.state, numericDepth: 0 });
-      codeVisitor.code(tab.content);
+      codeVisitor.codeAsBlock(tab.content);
       const codeLines = codeVisitor.getLines();
       codeVisitor.restoreState(this);
 
