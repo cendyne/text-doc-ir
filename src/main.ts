@@ -82,11 +82,11 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     parent.state.linkCount = this.state.linkCount;
   }
 
-  protected text(node: TextNode): void {
+  protected override text(node: TextNode): void {
     this.pushText(node.text);
   }
 
-  protected formattedText(node: FormattedTextNode): void {
+  protected override formattedText(node: FormattedTextNode): void {
     this.pushBlockContentBegin();
     for (const line of node.text.split("\n")) {
       this.pushLine();
@@ -96,23 +96,23 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected horizontalRule(_node: HorizontalRuleNode): void {
+  protected override horizontalRule(_node: HorizontalRuleNode): void {
     this.pushBlockContentBegin();
     this.pushText("-".repeat(this.width));
     this.pushBlockContentEnd();
   }
 
-  protected break_(_node: BreakNode): void {
+  protected override break_(_node: BreakNode): void {
     this.breakCount++;
   }
 
-  protected paragraph(node: ParagraphNode): void {
+  protected override paragraph(node: ParagraphNode): void {
     this.pushBlockContentBegin();
     super.paragraph(node);
     this.pushBlockContentEnd();
   }
 
-  protected list(node: ListNode): void {
+  protected override list(node: ListNode): void {
     if (this.lines.length > 0) {
       this.breakLazy = true;
     }
@@ -172,10 +172,10 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected columns(node: ColumnsNode): void {
+  protected override columns(node: ColumnsNode): void {
     const count = node["column-count"];
     if (count == 1) {
-      this.visit({ type: "array", content: node.columns[0] });
+      this.visit({ type: "array", content: node.columns[0]! });
       return;
     }
     let consumedWidth = 0;
@@ -190,7 +190,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
       const visitor = new FixedWidthTextVisitor(width);
       visitor.setState({ ...this.state, numericDepth: 0 });
-      visitor.visit({ type: "array", content: node.columns[i] });
+      visitor.visit({ type: "array", content: node.columns[i]! });
       const lines = visitor.getLines();
       columns.push(lines);
       maxLines = Math.max(maxLines, lines.length);
@@ -206,7 +206,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         if (j > 0) {
           line += "  ";
         }
-        const colLine = columns[j][i] || "";
+        const colLine = columns[j]?.[i] ?? "";
         line += colLine + " ".repeat(generalWidth - colLine.length);
       }
       this.lines.push(line.trimEnd());
@@ -214,7 +214,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected link(node: LinkNode): void {
+  protected override link(node: LinkNode): void {
     super.link(node);
     if (this.state.linkCount == 83) {
       // console.log(JSON.stringify(this.state));
@@ -233,7 +233,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
     if (
       this.spaceLazy && this.lines.length > 0 &&
-      this.lines[this.lines.length - 1].match(/[{\(\[]$/)
+      this.lines[this.lines.length - 1]!.match(/[{\(\[]$/)
     ) {
       this.spaceLazy = false;
     }
@@ -241,7 +241,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.spaceLazy = true;
   }
 
-  protected image(node: ImageNode): void {
+  protected override image(node: ImageNode): void {
     let key: string;
     if (this.state.images.has(node.url)) {
       key = this.state.images.get(node.url) || "unreachable";
@@ -258,7 +258,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected figureImage(node: FigureImageNode): void {
+  protected override figureImage(node: FigureImageNode): void {
     let key: string;
     if (this.state.images.has(node.url)) {
       key = this.state.images.get(node.url) || "unreachable";
@@ -278,7 +278,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     });
   }
 
-  protected emoji(node: EmojiNode): void {
+  protected override emoji(node: EmojiNode): void {
     let key: string;
     if (this.state.images.has(node.url)) {
       key = this.state.images.get(node.url) || "unreachable";
@@ -294,7 +294,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.spaceLazy = true;
   }
 
-  protected video(node: VideoNode): void {
+  protected override video(node: VideoNode): void {
     this.image({
       type: "image",
       url: node.poster,
@@ -302,7 +302,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     });
   }
 
-  protected embed(node: EmbedNode): void {
+  protected override embed(node: EmbedNode): void {
     if (node.content.type == "youtube") {
       this.spaceLazy = true;
       this.link({
@@ -313,13 +313,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
   }
 
-  protected header(node: HeaderNode): void {
+  protected override header(node: HeaderNode): void {
     const startIndex = this.lines.length;
     super.header(node);
     const end = this.lines.length;
     let maxWidth = 1;
     for (let i = startIndex; i < end; i++) {
-      const line = this.lines[i];
+      const line = this.lines[i]!;
       maxWidth = Math.min(this.width, line.length);
     }
     this.pushLine();
@@ -341,13 +341,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.lazyLines = [""];
   }
 
-  protected strikeThrough(node: StrikeThroughNode): void {
+  protected override strikeThrough(node: StrikeThroughNode): void {
     this.pushText("(Strike through: ");
     super.strikeThrough(node);
     this.pushText(")");
   }
 
-  protected note(node: NoteNode): void {
+  protected override note(node: NoteNode): void {
     this.paragraph({
       type: "paragraph",
       content: [
@@ -357,7 +357,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     });
   }
 
-  protected center(node: CenterNode): void {
+  protected override center(node: CenterNode): void {
     const visitor = new FixedWidthTextVisitor(this.width);
     visitor.setState({ ...this.state, numericDepth: 0 });
     visitor.visit({
@@ -374,7 +374,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected warning(node: WarningNode): void {
+  protected override warning(node: WarningNode): void {
     this.pushBlockContentBegin();
 
     const visitor = new FixedWidthTextVisitor(this.width - 2);
@@ -392,7 +392,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected highTechAlert(node: HighTechAlertNode): void {
+  protected override highTechAlert(node: HighTechAlertNode): void {
     this.pushBlockContentBegin();
     this.pushText("/");
     this.pushText("-".repeat(this.width - 2));
@@ -437,7 +437,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected blockQuote(node: BlockQuoteNode): void {
+  protected override blockQuote(node: BlockQuoteNode): void {
     this.pushBlockContentBegin();
 
     const visitor = new FixedWidthTextVisitor(this.width - 2);
@@ -455,7 +455,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected quote(node: QuoteNode): void {
+  protected override quote(node: QuoteNode): void {
     this.pushBlockContentBegin();
 
     const visitor = new FixedWidthTextVisitor(this.width - 2);
@@ -477,7 +477,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected bubble(node: BubbleNode): void {
+  protected override bubble(node: BubbleNode): void {
     this.pushBlockContentBegin();
 
     const visitor = new FixedWidthTextVisitor(this.width - 4);
@@ -501,7 +501,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected sticker(node: StickerNode): void {
+  protected override sticker(node: StickerNode): void {
     this.pushBlockContentBegin();
 
     const visitor = new FixedWidthTextVisitor(this.width - 4);
@@ -551,7 +551,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected card(node: CardNode): void {
+  protected override card(node: CardNode): void {
     this.pushBlockContentBegin();
     this.pushText("/");
     this.pushText("-".repeat(this.width - 2));
@@ -645,7 +645,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected definitionReference(node: DefinitionReferenceNode): void {
+  protected override definitionReference(node: DefinitionReferenceNode): void {
     this.visit({
       type: "array",
       content: [
@@ -654,7 +654,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     });
   }
 
-  protected definition(node: DefinitionNode): void {
+  protected override definition(node: DefinitionNode): void {
     this.pushBlockContentBegin();
     this.chooseChildren(node.title);
     this.pushText(" (");
@@ -678,7 +678,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected toc(node: TableOfContentsNode): void {
+  protected override toc(node: TableOfContentsNode): void {
     if (this.state.tocDepth > 0) {
       const visitor = new FixedWidthTextVisitor(this.width - 3);
       visitor.setState({ ...this.state, tocDepth: this.state.tocDepth + 1 });
@@ -774,7 +774,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
   }
 
-  protected document(node: DocumentNode): void {
+  protected override document(node: DocumentNode): void {
     this.pushBlockContentBegin();
     let date: Date | undefined;
     try {
@@ -889,7 +889,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.breakCount--;
       if (
         this.lines[this.lines.length - 1] &&
-        this.lines[this.lines.length - 1].length > 0
+        this.lines[this.lines.length - 1]!.length > 0
       ) {
         this.lines.push("");
       }
@@ -900,7 +900,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     if (
       this.breakLazy && this.lines[this.lines.length - 1] &&
-      this.lines[this.lines.length - 1].length > 0
+      this.lines[this.lines.length - 1]!.length > 0
     ) {
       this.lines.push("");
       newLines = true;
@@ -940,7 +940,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     if (this.lines.length == 0) {
       return "";
     }
-    return this.lines[this.lines.length - 1];
+    return this.lines[this.lines.length - 1]!;
   }
 
   private pushText(text: string) {
@@ -951,7 +951,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     let index = this.lines.length - 1;
     let line: string;
     if (index >= 0) {
-      line = this.lines[index];
+      line = this.lines[index]!;
     } else {
       line = "";
       index = 0;
@@ -994,7 +994,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
         if (success) {
           this.lines[index] = line + slice;
-          if (this.lines[index].length > this.width) {
+          if (this.lines[index]!.length > this.width) {
             console.log("oops 1");
           }
         } else {
@@ -1009,7 +1009,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
         this.pushLine();
         index++;
-        line = this.lines[index];
+        line = this.lines[index]!;
         sliceStart = sliceEnd;
       } else {
         this.lines[index] = line + slice;
@@ -1019,18 +1019,18 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         }
       }
 
-      if (this.lines[index].length == this.width) {
+      if (this.lines[index]!.length == this.width) {
         this.pushLine();
         index++;
-        line = this.lines[index];
+        line = this.lines[index]!;
       }
     } while (true);
   }
 
   private pushLine() {
     const lastIndex = this.lines.length - 1;
-    if (lastIndex >= 0 && this.lines[lastIndex].endsWith(" ")) {
-      const line = this.lines[lastIndex];
+    if (lastIndex >= 0 && this.lines[lastIndex]!.endsWith(" ")) {
+      const line = this.lines[lastIndex]!;
       this.lines[lastIndex] = line.trimEnd();
     }
     this.lines.push("");

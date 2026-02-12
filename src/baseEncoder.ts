@@ -13,12 +13,12 @@ export function encodeBase(
     if (shift) {
       if (mod == 0) {
         next--;
-        output.push(keys[keys.length - 1]);
+        output.push(keys[keys.length - 1]!);
       } else {
-        output.push(keys[mod - 1]);
+        output.push(keys[mod - 1]!);
       }
     } else {
-      output.push(keys[mod]);
+      output.push(keys[mod]!);
     }
     num = next;
   } while (num > 0);
