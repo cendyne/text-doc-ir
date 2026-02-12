@@ -69,6 +69,10 @@ interface TextVisitingState {
   tocDepth: number;
 }
 
+function pad(n: number): number {
+  return Math.max(0, n);
+}
+
 export class FixedWidthTextVisitor extends NodeVisitor {
   private width: number;
   private lines: string[];
@@ -191,7 +195,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     for (const line of codeLines) {
       this.pushLine();
       this.eatSpaces = false;
-      const padRight = Math.max(0, boxWidth - 4 - line.length);
+      const padRight = pad(boxWidth - 4 - line.length);
       this.pushText("| " + line + " ".repeat(padRight) + " |");
     }
 
@@ -235,7 +239,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       for (const line of codeLines) {
         this.pushLine();
         this.eatSpaces = false;
-        const padRight = Math.max(0, boxWidth - 4 - line.length);
+        const padRight = pad(boxWidth - 4 - line.length);
         this.pushText("| " + line + " ".repeat(padRight) + " |");
       }
 
@@ -408,7 +412,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           line += "  ";
         }
         const colLine = columns[j]?.[i] ?? "";
-        line += colLine + " ".repeat(generalWidth - colLine.length);
+        line += colLine + " ".repeat(pad(generalWidth - colLine.length));
       }
       this.lines.push(line.trimEnd());
     }
@@ -724,7 +728,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           const cellLine = cellLines[line] || "";
           const width = colWidths[c]!;
           rowText += " " + cellLine +
-            " ".repeat(width - cellLine.length) + " |";
+            " ".repeat(pad(width - cellLine.length)) + " |";
         }
         this.pushText(rowText);
       }
@@ -761,7 +765,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     for (const line of visitor.getLines()) {
       this.pushEndOfLineIfAnyContent();
       this.lines[Math.max(0, this.lines.length - 1)] =
-        " ".repeat(Math.floor((this.width - line.length) / 2)) + line;
+        " ".repeat(pad(Math.floor((this.width - line.length) / 2))) + line;
     }
     visitor.restoreState(this);
     this.pushBlockContentEnd();
@@ -802,7 +806,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       anyWarningLines = true;
       this.pushEndOfLineIfAnyContent();
       this.lines[this.lines.length - 1] = "| " + line +
-        " ".repeat(this.width - 4 - line.length) + " |";
+        " ".repeat(pad(this.width - 4 - line.length)) + " |";
     }
     if (anyWarningLines) {
       this.pushLine();
@@ -819,7 +823,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     for (const line of contentVisitor.getLines()) {
       this.pushEndOfLineIfAnyContent();
       this.lines[this.lines.length - 1] = "| " + line +
-        " ".repeat(this.width - 4 - line.length) + " |";
+        " ".repeat(pad(this.width - 4 - line.length)) + " |";
     }
 
     this.pushEndOfLineIfAnyContent();
@@ -887,7 +891,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         this.lines[Math.max(0, this.lines.length - 1)] = "| " + line;
       } else if (node.orientation == "right") {
         this.lines[Math.max(0, this.lines.length - 1)] =
-          " ".repeat(this.width - 2 - line.length) + line + " |";
+          " ".repeat(pad(this.width - 2 - line.length)) + line + " |";
       }
     }
     visitor.restoreState(this);
@@ -909,12 +913,12 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     const label = `[${node.character}: ${node.name}]`;
     if (node.orientation == "left") {
       this.lines[Math.max(0, this.lines.length - 1)] = "/" + label +
-        "-".repeat(this.width - label.length - 2) + "\\";
+        "-".repeat(pad(this.width - label.length - 2)) + "\\";
     } else if (node.orientation == "right") {
       this.lines[Math.max(0, this.lines.length - 1)] = "/" +
-        "-".repeat(this.width - label.length - 2) + label + "\\";
+        "-".repeat(pad(this.width - label.length - 2)) + label + "\\";
     } else if (node.orientation == "center") {
-      const length = this.width - label.length - 2;
+      const length = pad(this.width - label.length - 2);
       const leftLength = Math.floor(length / 2);
       const rightLength = length - leftLength;
       this.lines[Math.max(0, this.lines.length - 1)] = "/" +
@@ -922,7 +926,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     for (const line of visitor.getLines()) {
       this.pushEndOfLineIfAnyContent();
-      const length = this.width - 3 - line.length;
+      const length = pad(this.width - 3 - line.length);
       if (node.orientation == "left") {
         this.lines[Math.max(0, this.lines.length - 1)] = "| " + line +
           " ".repeat(length) + "|";
@@ -975,7 +979,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         anyHeaderLines = true;
         this.pushEndOfLineIfAnyContent();
         this.lines[this.lines.length - 1] = "| " + line +
-          " ".repeat(this.width - 4 - line.length) + " |";
+          " ".repeat(pad(this.width - 4 - line.length)) + " |";
       }
       if (anyHeaderLines) {
         this.pushLine();
@@ -1027,7 +1031,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     for (const line of contentVisitor.getLines()) {
       this.pushEndOfLineIfAnyContent();
       this.lines[this.lines.length - 1] = "| " + line +
-        " ".repeat(this.width - 4 - line.length) + " |";
+        " ".repeat(pad(this.width - 4 - line.length)) + " |";
     }
 
     this.pushEndOfLineIfAnyContent();
@@ -1148,13 +1152,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
       this.pushBlockContentBegin();
 
-      this.lines[Math.max(0, this.lines.length - 1)] = "/" + "-".repeat(left) +
-        " Table of contents " + "-".repeat(right) + "\\";
+      this.lines[Math.max(0, this.lines.length - 1)] = "/" + "-".repeat(pad(left)) +
+        " Table of contents " + "-".repeat(pad(right)) + "\\";
 
       for (const line of lines) {
         this.pushEndOfLineIfAnyContent();
         this.lines[Math.max(0, this.lines.length - 1)] = "| " + line +
-          " ".repeat(maxLength - line.length) + "|";
+          " ".repeat(pad(maxLength - line.length)) + "|";
       }
 
       this.pushEndOfLineIfAnyContent();
