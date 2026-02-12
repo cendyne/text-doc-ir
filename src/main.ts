@@ -1,10 +1,14 @@
 import { encodeBase, LOWER_ALPHA, UPPER_ALPHA } from "./baseEncoder.ts";
 import type {
+  AccordionGroupNode,
+  AccordionTabNode,
   BlockQuoteNode,
   BreakNode,
   BubbleNode,
   CardNode,
   CenterNode,
+  CodeBlockNode,
+  CodeGroupNode,
   CodeNode,
   ColumnsNode,
   DateNode,
@@ -29,6 +33,7 @@ import type {
   Node,
   NoteNode,
   ParagraphNode,
+  PillNode,
   QuoteNode,
   RedactedNode,
   RegionNode,
@@ -50,40 +55,6 @@ import type {
   WarningNode,
 } from "document-ir";
 import { NodeVisitor } from "document-ir";
-
-// Types for node kinds not yet in document-ir's type system
-// but which appear in real documents and need dispatch.
-interface CodeBlockNode {
-  type: "code-block";
-  content: Node;
-  language?: string;
-}
-
-interface CodeGroupTabNode {
-  header: Node[];
-  content: Node;
-}
-
-interface CodeGroupNode {
-  type: "code-group";
-  tabs: CodeGroupTabNode[];
-}
-
-interface AccordionTabNode {
-  type: "accordion-tab";
-  header: Node[];
-  content: Node[];
-}
-
-interface AccordionGroupNode {
-  type: "accordion-group";
-  tabs: AccordionTabNode[];
-}
-
-interface PillNode {
-  type: "pill";
-  content: Node[];
-}
 
 interface TextVisitingState {
   images: Map<string, string>;
@@ -136,17 +107,15 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   }
 
   protected override choose(node: Node): void {
-    switch ((node as { type: string }).type) {
+    switch (node.type) {
       case "code-block":
-        return this.codeBlock(node as unknown as CodeBlockNode);
+        return this.codeBlock(node);
       case "code-group":
-        return this.codeGroup(node as unknown as CodeGroupNode);
+        return this.codeGroup(node);
       case "accordion-group":
-        return this.accordionGroup(node as unknown as AccordionGroupNode);
-      case "accordion-tab":
-        return this.accordionTab(node as unknown as AccordionTabNode);
+        return this.accordionGroup(node);
       case "pill":
-        return this.pill(node as unknown as PillNode);
+        return this.pill(node);
       case "style":
         // Omit styles entirely
         return;
