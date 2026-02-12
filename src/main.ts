@@ -129,17 +129,109 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
   }
 
-  protected codeBlock(node: CodeBlockNode): void {
+  protected override code(node: CodeNode): void {
+    // Collect text from children
+    const textVisitor = new FixedWidthTextVisitor(this.width);
+    textVisitor.setState({ ...this.state, numericDepth: 0 });
+    textVisitor.chooseChildren(node.content);
+    const rawLines = textVisitor.getLines();
+    textVisitor.restoreState(this);
+
+    // Process lines based on diff and lineNumbers flags
+    const lines = this.processCodeLines([...rawLines], node.diff ?? false, node.lineNumbers ?? false);
+
     this.pushBlockContentBegin();
-    this.choose(node.content);
+    for (const line of lines) {
+      this.pushLine();
+      this.eatSpaces = false;
+      this.pushText(line);
+    }
+    this.pushBlockContentEnd();
+  }
+
+  protected codeBlock(node: CodeBlockNode): void {
+    if (node.collapsable && node.collapsed) {
+      this.pushBlockContentBegin();
+      this.pushText(`[Collapsed: ${node.fileName}]`);
+      this.pushBlockContentEnd();
+      return;
+    }
+
+    // Render the code content first to get the lines
+    const codeVisitor = new FixedWidthTextVisitor(this.width - 4);
+    codeVisitor.setState({ ...this.state, numericDepth: 0 });
+    codeVisitor.code(node.content);
+    const codeLines = codeVisitor.getLines();
+    codeVisitor.restoreState(this);
+
+    // Calculate box width
+    const maxContentWidth = Math.max(...codeLines.map(l => l.length), node.fileName.length);
+    const boxWidth = Math.min(this.width, maxContentWidth + 4);
+
+    this.pushBlockContentBegin();
+
+    // Header: /--- fileName ---\
+    const headerPadding = Math.max(0, boxWidth - node.fileName.length - 4);
+    const leftPad = Math.floor(headerPadding / 2);
+    const rightPad = headerPadding - leftPad;
+    this.pushText("/" + "-".repeat(leftPad) + " " + node.fileName + " " + "-".repeat(rightPad) + "\\");
+
+    // Code lines in box
+    for (const line of codeLines) {
+      this.pushLine();
+      this.eatSpaces = false;
+      const padRight = Math.max(0, boxWidth - 4 - line.length);
+      this.pushText("| " + line + " ".repeat(padRight) + " |");
+    }
+
+    // Footer
+    this.pushLine();
+    this.pushText("\\" + "-".repeat(boxWidth - 2) + "/");
+
     this.pushBlockContentEnd();
   }
 
   protected codeGroup(node: CodeGroupNode): void {
     for (const tab of node.tabs) {
+      // Render header text
+      const headerVisitor = new FixedWidthTextVisitor(this.width);
+      headerVisitor.setState({ ...this.state, numericDepth: 0 });
+      headerVisitor.chooseChildren(tab.header);
+      const headerLines = headerVisitor.getLines();
+      const headerText = headerLines.join(" ").trim();
+      headerVisitor.restoreState(this);
+
+      // Render code content
+      const codeVisitor = new FixedWidthTextVisitor(this.width - 4);
+      codeVisitor.setState({ ...this.state, numericDepth: 0 });
+      codeVisitor.code(tab.content);
+      const codeLines = codeVisitor.getLines();
+      codeVisitor.restoreState(this);
+
+      // Calculate box width
+      const maxContentWidth = Math.max(...codeLines.map(l => l.length), headerText.length);
+      const boxWidth = Math.min(this.width, maxContentWidth + 4);
+
       this.pushBlockContentBegin();
-      this.chooseChildren(tab.header);
-      this.choose(tab.content);
+
+      // Header
+      const headerPadding = Math.max(0, boxWidth - headerText.length - 4);
+      const leftPad = Math.floor(headerPadding / 2);
+      const rightPad = headerPadding - leftPad;
+      this.pushText("/" + "-".repeat(leftPad) + " " + headerText + " " + "-".repeat(rightPad) + "\\");
+
+      // Code lines
+      for (const line of codeLines) {
+        this.pushLine();
+        this.eatSpaces = false;
+        const padRight = Math.max(0, boxWidth - 4 - line.length);
+        this.pushText("| " + line + " ".repeat(padRight) + " |");
+      }
+
+      // Footer
+      this.pushLine();
+      this.pushText("\\" + "-".repeat(boxWidth - 2) + "/");
+
       this.pushBlockContentEnd();
     }
   }
@@ -151,8 +243,25 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   }
 
   protected accordionTab(node: AccordionTabNode): void {
+    if (node.open === false) {
+      this.pushBlockContentBegin();
+      const headerVisitor = new FixedWidthTextVisitor(this.width);
+      headerVisitor.setState({ ...this.state, numericDepth: 0 });
+      headerVisitor.chooseChildren(node.header);
+      const headerText = headerVisitor.getLines().join(" ").trim();
+      headerVisitor.restoreState(this);
+      this.pushText(`[Collapsed: ${headerText}]`);
+      this.pushBlockContentEnd();
+      return;
+    }
+
+    // Render header as a sub-heading
     this.pushBlockContentBegin();
     this.chooseChildren(node.header);
+    this.pushBlockContentEnd();
+
+    // Render content
+    this.pushBlockContentBegin();
     this.chooseChildren(node.content);
     this.pushBlockContentEnd();
   }
@@ -1307,6 +1416,73 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.lines[lastIndex] = line.trimEnd();
     }
     this.lines.push("");
+  }
+
+  private processCodeLines(rawLines: string[], diff: boolean, lineNumbers: boolean): string[] {
+    if (!diff && !lineNumbers) {
+      return rawLines;
+    }
+
+    interface ProcessedLine {
+      text: string;
+      prefix: string;     // '+', '-', or ' ' for diff
+      oldNo: number | null;
+      newNo: number | null;
+    }
+
+    let oldCounter = 0;
+    let newCounter = 0;
+
+    const processed: ProcessedLine[] = rawLines.map(line => {
+      if (diff) {
+        if (line.startsWith('+')) {
+          newCounter++;
+          return { text: line.slice(1), prefix: '+', oldNo: null, newNo: newCounter };
+        }
+        if (line.startsWith('-')) {
+          oldCounter++;
+          return { text: line.slice(1), prefix: '-', oldNo: oldCounter, newNo: null };
+        }
+        oldCounter++;
+        newCounter++;
+        return { text: line, prefix: ' ', oldNo: oldCounter, newNo: newCounter };
+      } else {
+        newCounter++;
+        return { text: line, prefix: ' ', oldNo: null, newNo: newCounter };
+      }
+    });
+
+    const result: string[] = [];
+
+    if (lineNumbers && diff) {
+      // Two-column line numbers for diff
+      const maxOld = processed.reduce((m, p) => Math.max(m, p.oldNo ?? 0), 0);
+      const maxNew = processed.reduce((m, p) => Math.max(m, p.newNo ?? 0), 0);
+      const oldWidth = Math.max(String(maxOld).length, 1);
+      const newWidth = Math.max(String(maxNew).length, 1);
+
+      for (const line of processed) {
+        const oldStr = line.oldNo !== null ? String(line.oldNo).padStart(oldWidth) : ' '.repeat(oldWidth);
+        const newStr = line.newNo !== null ? String(line.newNo).padStart(newWidth) : ' '.repeat(newWidth);
+        result.push(`${oldStr} ${newStr} ${line.prefix} ${line.text}`);
+      }
+    } else if (lineNumbers) {
+      // Single column line numbers
+      const maxLine = processed.length;
+      const numWidth = String(maxLine).length;
+
+      for (const line of processed) {
+        const numStr = String(line.newNo ?? 0).padStart(numWidth);
+        result.push(`${numStr} | ${line.text}`);
+      }
+    } else if (diff) {
+      // Diff markers only, no line numbers
+      for (const line of processed) {
+        result.push(`${line.prefix} ${line.text}`);
+      }
+    }
+
+    return result;
   }
 
   public getLines(): readonly string[] {
