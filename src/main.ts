@@ -3,7 +3,6 @@ import type {
   AccordionGroupNode,
   AccordionTabNode,
   BlockQuoteNode,
-  BoldNode,
   BreakNode,
   BubbleNode,
   CardNode,
@@ -28,7 +27,6 @@ import type {
   HighTechAlertNode,
   HorizontalRuleNode,
   ImageNode,
-  ItalicNode,
   LinkNode,
   ListNode,
   Node,
@@ -39,20 +37,17 @@ import type {
   RedactedNode,
   RegionNode,
   SecretNode,
-  SmallerNode,
   SocialNode,
   StandardNode,
   StickerNode,
   StrikeThroughNode,
   SubTextNode,
   SuperTextNode,
-  TableCellNode,
   TableNode,
   TableOfContentsNode,
   TextNode,
   TimeNode,
   TimeRangeNode,
-  UnderlineNode,
   VideoNode,
   WarningNode,
 } from "document-ir";
@@ -438,7 +433,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
     if (
       this.spaceLazy && this.lines.length > 0 &&
-      this.lines[this.lines.length - 1]!.match(/[{\(\[]$/)
+      this.lines[this.lines.length - 1]!.match(/[{([]$/)
     ) {
       this.spaceLazy = false;
     }
@@ -683,7 +678,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       let hasHeader = false;
       for (let c = 0; c < row.length; c++) {
         const cell = row[c]!;
-        if (cell.header) hasHeader = true;
+        if (cell.header) {hasHeader = true;}
         // Reserve space for borders: | col | col | = colCount * 3 + 1
         const availWidth = Math.max(
           5,
@@ -999,7 +994,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       if (node.attribution.date) {
         try {
           date = new Date(node.attribution.date);
-        } catch (_e) {
+        } catch {
           // Oh well
         }
       }
@@ -1178,7 +1173,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       if (node["pub-date"]) {
         date = new Date(node["pub-date"] * 1000);
       }
-    } catch (_e) {
+    } catch {
       // Nothing
     }
     this.center({
@@ -1341,7 +1336,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   }
 
   private pushText(text: string) {
-    if (this.spaceLazy && text.match(/^[\.,}\)\]>]/)) {
+    if (this.spaceLazy && text.match(/^[.,})\]>]/)) {
       this.spaceLazy = false;
     }
     this.pushLazyLines();
@@ -1357,7 +1352,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     // Prevent orphaned ending punctuation: if this text starts with
     // ending punctuation and the current line is empty, move the last
     // word from the previous line down so punctuation attaches to it.
-    if (line === "" && index > 0 && text.length > 0 && /^[.,\])\}>]/.test(text)) {
+    if (line === "" && index > 0 && text.length > 0 && /^[.,\])}>]/.test(text)) {
       const prevLine = this.lines[index - 1]!;
       const lastSpace = prevLine.lastIndexOf(" ");
       if (lastSpace > 0) {
@@ -1368,10 +1363,10 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
 
     let sliceStart = 0;
-    do {
+    for (;;) {
       if ((line == "" && this.eatSpaces) || line.endsWith(" ")) {
         // skip white space
-        while (true) {
+        for (;;) {
           const nextChar = text.slice(sliceStart, sliceStart + 1);
           if (nextChar == "") {
             break;
@@ -1389,12 +1384,12 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       const nextChar = text.slice(sliceEnd, sliceEnd + 1);
       if (slice == "") {
         break;
-      } else if (nextChar && nextChar.match(/[a-zA-Z0-9\.\?,\]\)\}>]/)) {
+      } else if (nextChar && nextChar.match(/[a-zA-Z0-9.?,\])}>]/)) {
         let success = false;
         for (let i = 0; i < slice.length; i++) {
           const index = slice.length - 1 - i;
           const char = slice.charAt(index);
-          if (char && char.match(/[ =\-_\/\\\n\r\t]/)) {
+          if (char && char.match(/[ =\-_/\\\n\r\t]/)) {
             sliceEnd -= i;
             slice = text.slice(sliceStart, sliceEnd);
             success = true;
@@ -1434,7 +1429,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
         index++;
         line = this.lines[index]!;
       }
-    } while (true);
+    }
   }
 
   private pushLine() {
