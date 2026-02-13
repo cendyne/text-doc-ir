@@ -1341,7 +1341,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   }
 
   private pushText(text: string) {
-    if (this.spaceLazy && text.match(/^[\.,}\)\]]/)) {
+    if (this.spaceLazy && text.match(/^[\.,}\)\]>]/)) {
       this.spaceLazy = false;
     }
     this.pushLazyLines();
@@ -1352,6 +1352,19 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     } else {
       line = "";
       index = 0;
+    }
+
+    // Prevent orphaned ending punctuation: if this text starts with
+    // ending punctuation and the current line is empty, move the last
+    // word from the previous line down so punctuation attaches to it.
+    if (line === "" && index > 0 && text.length > 0 && /^[.,\])\}>]/.test(text)) {
+      const prevLine = this.lines[index - 1]!;
+      const lastSpace = prevLine.lastIndexOf(" ");
+      if (lastSpace > 0) {
+        this.lines[index - 1] = prevLine.slice(0, lastSpace);
+        line = prevLine.slice(lastSpace + 1);
+        this.lines[index] = line;
+      }
     }
 
     let sliceStart = 0;
@@ -1376,7 +1389,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       const nextChar = text.slice(sliceEnd, sliceEnd + 1);
       if (slice == "") {
         break;
-      } else if (nextChar && nextChar.match(/[a-zA-Z0-9\.\?,\]\)]/)) {
+      } else if (nextChar && nextChar.match(/[a-zA-Z0-9\.\?,\]\)\}>]/)) {
         let success = false;
         for (let i = 0; i < slice.length; i++) {
           const index = slice.length - 1 - i;
