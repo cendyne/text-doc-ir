@@ -2281,3 +2281,35 @@ test("Complex document at 80 chars is readable", () => {
   expect(lines.some(l => l.includes("bold text"))).toBe(true);
   expect(lines.some(l => l.includes("Feature"))).toBe(true);
 });
+
+// Punctuation attachment tests (issue #4)
+// Ending punctuation should not be orphaned on a new line
+
+for (const char of [".", ",", "]", ")", "}", ">"]) {
+  test(`punctuation attachment: "${char}" stays with last word in single text node`, () => {
+    const visitor = new FixedWidthTextVisitor(23);
+    visitor.visit({
+      type: "paragraph",
+      content: [{ type: "text", text: `blah blah blah lastword${char}` }],
+    } as any);
+    expect(visitor.getLines()).toEqual([
+      "blah blah blah",
+      `lastword${char}`,
+    ]);
+  });
+
+  test(`punctuation attachment: "${char}" stays with last word across text nodes`, () => {
+    const visitor = new FixedWidthTextVisitor(23);
+    visitor.visit({
+      type: "paragraph",
+      content: [
+        { type: "text", text: "blah blah blah lastword" },
+        { type: "text", text: char },
+      ],
+    } as any);
+    expect(visitor.getLines()).toEqual([
+      "blah blah blah",
+      `lastword${char}`,
+    ]);
+  });
+}
