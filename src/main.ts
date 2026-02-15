@@ -2,6 +2,7 @@ import { encodeBase, LOWER_ALPHA, UPPER_ALPHA } from "./baseEncoder.ts";
 import type {
   AccordionGroupNode,
   AccordionTabNode,
+  BadgeNode,
   BlockQuoteNode,
   BreakNode,
   BubbleNode,
@@ -22,6 +23,8 @@ import type {
   FigureCaptionNode,
   FigureImageNode,
   FigureNode,
+  FootnoteNode,
+  FootnoteDisplayNode,
   FormattedTextNode,
   HeaderNode,
   HighTechAlertNode,
@@ -53,6 +56,11 @@ import type {
 } from "document-ir";
 import { NodeVisitor } from "document-ir";
 
+interface FootnoteEntry {
+  key: string;
+  content: Node[];
+}
+
 interface TextVisitingState {
   images: Map<string, string>;
   imagesReverse: Map<string, string>;
@@ -60,6 +68,8 @@ interface TextVisitingState {
   links: Map<string, string>;
   linksReverse: Map<string, string>;
   linkCount: number;
+  footnotes: FootnoteEntry[];
+  footnoteCount: number;
   numericDepth: number;
   tocDepth: number;
 }
@@ -93,6 +103,8 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       links: new Map(),
       linksReverse: new Map(),
       linkCount: 0,
+      footnotes: [],
+      footnoteCount: 0,
       numericDepth: 0,
       tocDepth: 0,
     };
@@ -105,6 +117,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
   private restoreState(parent: FixedWidthTextVisitor) {
     parent.state.imageCount = this.state.imageCount;
     parent.state.linkCount = this.state.linkCount;
+    parent.state.footnoteCount = this.state.footnoteCount;
   }
 
   protected override choose(node: Node): void {
@@ -273,6 +286,63 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     // Render content
     this.pushBlockContentBegin();
     this.chooseChildren(node.content);
+    this.pushBlockContentEnd();
+  }
+
+  protected override badge(node: BadgeNode): void {
+    let key: string;
+    if (this.state.images.has(node.url)) {
+      key = this.state.images.get(node.url) || "unreachable";
+    } else {
+      this.state.imageCount++;
+      key = `I${this.state.imageCount}`;
+      this.state.images.set(node.url, key);
+      this.state.imagesReverse.set(key, node.url);
+    }
+    this.spaceLazy = true;
+    this.pushText(
+      `[${key}: ${(node.alt || "unspecified").replaceAll(/[\n\r\t]/g, " ")}]`,
+    );
+    this.spaceLazy = true;
+  }
+
+  protected override footnote(node: FootnoteNode): void {
+    this.state.footnoteCount++;
+    const key = `f${this.state.footnoteCount}`;
+    this.state.footnotes.push({ key, content: node.content });
+    this.pushText(`[${key}]`);
+  }
+
+  protected override footnoteDisplay(_node: FootnoteDisplayNode): void {
+    this.renderFootnotes();
+  }
+
+  private renderFootnotes(): void {
+    if (this.state.footnotes.length === 0) {return;}
+
+    this.pushBlockContentBegin();
+    const lastKey = this.state.footnotes[this.state.footnotes.length - 1]!.key;
+    const length = `[${lastKey}]: `.length;
+    for (const fn of this.state.footnotes) {
+      const label = `[${fn.key}]: `;
+      const visitor = new FixedWidthTextVisitor(this.width - length);
+      visitor.setState({ ...this.state, numericDepth: 0 });
+      visitor.visit({ type: "array", content: fn.content });
+      let firstLine = true;
+      for (const line of visitor.getLines()) {
+        this.pushEndOfLineIfAnyContent();
+        if (firstLine) {
+          this.lines[Math.max(0, this.lines.length - 1)] =
+            " ".repeat(length - label.length) + label + line;
+          firstLine = false;
+        } else {
+          this.lines[Math.max(0, this.lines.length - 1)] =
+            " ".repeat(length) + line;
+        }
+      }
+      visitor.restoreState(this);
+    }
+    this.state.footnotes = [];
     this.pushBlockContentEnd();
   }
 
@@ -1199,6 +1269,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
       this.chooseChildren(node.definitions);
     }
     this.afterBlock();
+    this.renderFootnotes();
     this.pushLine();
     if (this.state.linkCount > 0) {
       this.beforeBlock();
