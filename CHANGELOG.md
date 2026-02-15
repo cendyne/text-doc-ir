@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.1.0...text-doc-ir-v0.2.0) (2026-02-15)
+
+
+### Features
+
+* upgrade to document-ir 0.4.0 with badge and footnote support ([#10](https://github.com/cendyne/text-doc-ir/issues/10)) ([5e5ed51](https://github.com/cendyne/text-doc-ir/commit/5e5ed51a7d6ae650bea164cea3c4f8bebf1806bd))
+
 ## [0.1.0](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.0.14...text-doc-ir-v0.1.0) (2026-02-13)
 
 
