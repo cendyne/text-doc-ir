@@ -1,0 +1,44 @@
+{
+  "type": "document",
+  "title": "Lorem Ipsum with Footnotes",
+  "url": "/example",
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit." },
+        {
+          "type": "footnote",
+          "content": [{ "type": "text", "text": "From the original Latin text by Cicero, De Finibus Bonorum et Malorum." }]
+        },
+        { "type": "text", "text": " Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris." }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur." },
+        {
+          "type": "footnote",
+          "content": [{ "type": "text", "text": "This phrase is commonly used in typesetting since the 1500s." }]
+        },
+        { "type": "text", "text": " Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." },
+        {
+          "type": "footnote",
+          "content": [{ "type": "text", "text": "The standard Lorem Ipsum passage ends here." }]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "Curabitur pretium tincidunt lacus. Nulla gravida orci a odio." },
+        {
+          "type": "footnote",
+          "content": [{ "type": "text", "text": "Additional placeholder text beyond the classical excerpt." }]
+        },
+        { "type": "text", "text": " Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris." }
+      ]
+    }
+  ]
+}

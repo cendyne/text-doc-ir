@@ -2282,6 +2282,327 @@ test("Complex document at 80 chars is readable", () => {
   expect(lines.some(l => l.includes("Feature"))).toBe(true);
 });
 
+// Badge node tests
+test("badge renders inline like emoji with image reference", () => {
+  const visitor = new FixedWidthTextVisitor(60);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      { type: "text", text: "Status:" },
+      {
+        type: "badge",
+        url: "https://img.shields.io/badge/build-passing-green",
+        alt: "Build Status",
+      },
+    ],
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "Status: [I1: Build Status]",
+  ]);
+});
+
+test("badge deduplicates same URL", () => {
+  const visitor = new FixedWidthTextVisitor(60);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      {
+        type: "badge",
+        url: "https://img.shields.io/badge/build-passing-green",
+        alt: "Build Status",
+      },
+      { type: "text", text: "and" },
+      {
+        type: "badge",
+        url: "https://img.shields.io/badge/build-passing-green",
+        alt: "Build Status",
+      },
+    ],
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "[I1: Build Status] and [I1: Build Status]",
+  ]);
+});
+
+test("badge URL appears in document image references", () => {
+  const visitor = new FixedWidthTextVisitor(60);
+  visitor.visit({
+    type: "document",
+    title: "Test",
+    url: "/test",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Status:" },
+          {
+            type: "badge",
+            url: "https://img.shields.io/badge/build-passing",
+            alt: "Build",
+          },
+        ],
+      },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  expect(lines.some(l => l.includes("[I1]: https://img.shields.io/badge/build-passing"))).toBe(true);
+});
+
+// Footnote node tests
+test("footnote renders inline reference", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      { type: "text", text: "Some text" },
+      {
+        type: "footnote",
+        content: [{ type: "text", text: "A footnote" }],
+      },
+      { type: "text", text: " more text." },
+    ],
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "Some text[f1] more text.",
+  ]);
+});
+
+test("multiple footnotes get sequential numbers", () => {
+  const visitor = new FixedWidthTextVisitor(60);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      { type: "text", text: "First" },
+      {
+        type: "footnote",
+        content: [{ type: "text", text: "Note one" }],
+      },
+      { type: "text", text: " and second" },
+      {
+        type: "footnote",
+        content: [{ type: "text", text: "Note two" }],
+      },
+      { type: "text", text: "." },
+    ],
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "First[f1] and second[f2].",
+  ]);
+});
+
+test("footnote-display renders accumulated footnotes", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "array",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Text" },
+          {
+            type: "footnote",
+            content: [{ type: "text", text: "First note" }],
+          },
+          { type: "text", text: " more" },
+          {
+            type: "footnote",
+            content: [{ type: "text", text: "Second note" }],
+          },
+        ],
+      },
+      { type: "footnote-display" },
+    ],
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "Text[f1] more[f2]",
+    "",
+    "[f1]: First note",
+    "[f2]: Second note",
+  ]);
+});
+
+test("footnote-display clears footnotes after rendering", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "array",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Part one" },
+          {
+            type: "footnote",
+            content: [{ type: "text", text: "Note A" }],
+          },
+        ],
+      },
+      { type: "footnote-display" },
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Part two" },
+          {
+            type: "footnote",
+            content: [{ type: "text", text: "Note B" }],
+          },
+        ],
+      },
+      { type: "footnote-display" },
+    ],
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "Part one[f1]",
+    "",
+    "[f1]: Note A",
+    "",
+    "Part two[f2]",
+    "",
+    "[f2]: Note B",
+  ]);
+});
+
+test("footnote-display does not double render across sections", () => {
+  const visitor = new FixedWidthTextVisitor(60);
+  const footnotes = (start: number, count: number) => {
+    const content: any[] = [];
+    for (let i = 0; i < count; i++) {
+      content.push({ type: "text", text: i > 0 ? " text" : "Text" });
+      content.push({
+        type: "footnote",
+        content: [{ type: "text", text: `Footnote ${start + i}` }],
+      });
+    }
+    return content;
+  };
+  visitor.visit({
+    type: "document",
+    title: "Test",
+    url: "/test",
+    content: [
+      { type: "paragraph", content: footnotes(1, 5) },
+      { type: "footnote-display" },
+      { type: "paragraph", content: footnotes(6, 6) },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  // First batch: f1-f5 rendered by footnote-display
+  for (let i = 1; i <= 5; i++) {
+    const count = lines.filter(l => l.includes(`[f${i}]:`)).length;
+    expect(count).toBe(1);
+  }
+  // Second batch: f6-f11 rendered at document end
+  for (let i = 6; i <= 11; i++) {
+    const count = lines.filter(l => l.includes(`[f${i}]:`)).length;
+    expect(count).toBe(1);
+  }
+  // Verify ordering: f5 definition before f6 definition
+  const f5Line = lines.findIndex(l => l.includes("[f5]:"));
+  const f6Line = lines.findIndex(l => l.includes("[f6]:"));
+  expect(f5Line).toBeLessThan(f6Line);
+});
+
+test("footnotes in document render above links and images", () => {
+  const visitor = new FixedWidthTextVisitor(60);
+  visitor.visit({
+    type: "document",
+    title: "Test",
+    url: "/test",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Click " },
+          {
+            type: "link",
+            url: "https://example.com",
+            content: [{ type: "text", text: "here" }],
+          },
+          {
+            type: "footnote",
+            content: [{ type: "text", text: "A footnote" }],
+          },
+        ],
+      },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  const footnoteIndex = lines.findIndex(l => l.includes("[f1]: A footnote"));
+  const linkIndex = lines.findIndex(l => l.includes("[L1]: https://example.com"));
+  expect(footnoteIndex).toBeGreaterThan(-1);
+  expect(linkIndex).toBeGreaterThan(-1);
+  expect(footnoteIndex).toBeLessThan(linkIndex);
+});
+
+test("footnote-display within document content prevents document-end rendering", () => {
+  const visitor = new FixedWidthTextVisitor(60);
+  visitor.visit({
+    type: "document",
+    title: "Test",
+    url: "/test",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Text" },
+          {
+            type: "footnote",
+            content: [{ type: "text", text: "Inline note" }],
+          },
+        ],
+      },
+      { type: "footnote-display" },
+    ],
+  } as any);
+  const lines = visitor.getLines();
+  // Footnote should appear only once (via footnote-display, not duplicated at end)
+  const count = lines.filter(l => l.includes("[f1]:")).length;
+  expect(count).toBe(1);
+});
+
+test("footnote with long content wraps properly", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "array",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Text" },
+          {
+            type: "footnote",
+            content: [{ type: "text", text: "This is a very long footnote that should wrap to multiple lines properly" }],
+          },
+        ],
+      },
+      { type: "footnote-display" },
+    ],
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "Text[f1]",
+    "",
+    "[f1]: This is a very long footnote that",
+    "      should wrap to multiple lines",
+    "      properly",
+  ]);
+});
+
+test("no footnote-display renders nothing when no footnotes exist", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "array",
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "No footnotes here" }],
+      },
+      { type: "footnote-display" },
+    ],
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "No footnotes here",
+  ]);
+});
+
 // Punctuation attachment tests (issue #4)
 // Ending punctuation should not be orphaned on a new line
 

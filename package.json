@@ -44,7 +44,7 @@
     "to-text": "bun src/to-text.ts"
   },
   "dependencies": {
-    "document-ir": "0.3.0"
+    "document-ir": "0.4.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
