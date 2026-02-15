@@ -122,18 +122,12 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
   protected override choose(node: Node): void {
     switch (node.type) {
-      case "badge":
-        return this.badge(node);
       case "code-block":
         return this.codeBlock(node);
       case "code-group":
         return this.codeGroup(node);
       case "accordion-group":
         return this.accordionGroup(node);
-      case "footnote":
-        return this.footnote(node);
-      case "footnote-display":
-        return this.footnoteDisplay(node);
       case "pill":
         return this.pill(node);
       case "style":
@@ -295,7 +289,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected badge(node: BadgeNode): void {
+  protected override badge(node: BadgeNode): void {
     let key: string;
     if (this.state.images.has(node.url)) {
       key = this.state.images.get(node.url) || "unreachable";
@@ -312,14 +306,14 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.spaceLazy = true;
   }
 
-  protected footnote(node: FootnoteNode): void {
+  protected override footnote(node: FootnoteNode): void {
     this.state.footnoteCount++;
     const key = `f${this.state.footnoteCount}`;
     this.state.footnotes.push({ key, content: node.content });
     this.pushText(`[${key}]`);
   }
 
-  protected footnoteDisplay(_node: FootnoteDisplayNode): void {
+  protected override footnoteDisplay(_node: FootnoteDisplayNode): void {
     this.renderFootnotes();
   }
 
