@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.2.0...text-doc-ir-v0.3.0) (2026-02-23)
+
+
+### Features
+
+* add bluesky social node support ([#12](https://github.com/cendyne/text-doc-ir/issues/12)) ([e1815d7](https://github.com/cendyne/text-doc-ir/commit/e1815d753c74dbed224bf5e9cfeb801c5a169af3))
+
 ## [0.2.0](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.1.0...text-doc-ir-v0.2.0) (2026-02-15)
 
 
