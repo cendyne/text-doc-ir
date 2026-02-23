@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.3.0...text-doc-ir-v0.3.1) (2026-02-23)
+
+
+### Bug Fixes
+
+* skip [@domain](https://github.com/domain) suffix in card header when usernameDomain is null ([#14](https://github.com/cendyne/text-doc-ir/issues/14)) ([553de34](https://github.com/cendyne/text-doc-ir/commit/553de34374480a1f1b7ce9b96f14152164d216c7))
+
 ## [0.3.0](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.2.0...text-doc-ir-v0.3.0) (2026-02-23)
 
 
