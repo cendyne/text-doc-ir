@@ -1583,6 +1583,34 @@ test("Sticker Center", () => {
   ]);
 });
 
+test("Card with null usernameDomain", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "card",
+    header: {
+      type: "card-header",
+      title: [{ type: "text", text: "Sirius" }],
+      username: "smolunicorn1.bsky.social",
+    },
+    content: {
+      type: "card-content",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Hello world" }],
+        },
+      ],
+    },
+  } as any);
+  expect(visitor.getLines()).toEqual([
+    "/--------------------------------------\\",
+    "|   Sirius @smolunicorn1.bsky.social   |",
+    "|--------------------------------------|",
+    "| Hello world                          |",
+    "\\--------------------------------------/",
+  ]);
+});
+
 test("Document - 1", () => {
   const visitor = new FixedWidthTextVisitor(40);
   visitor.visit({
