@@ -701,6 +701,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
           content: [{ type: "text", text: "Toot" }],
         });
         break;
+      case "bluesky":
+        this.link({
+          type: "link",
+          url: `https://bsky.app/post/${node.id}`,
+          content: [{ type: "text", text: "Bluesky Post" }],
+        });
+        break;
       case "vimeo":
         this.link({
           type: "link",
