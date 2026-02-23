@@ -1039,7 +1039,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
                 type: "text",
                 text: ` @${node.header.username}`,
               } as TextNode] || []),
-          ...(node.header.username &&
+          ...(node.header.usernameDomain &&
               [{
                 type: "text",
                 text: `@${node.header.usernameDomain}`,
