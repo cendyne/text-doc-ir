@@ -172,7 +172,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected codeBlock(node: CodeBlockNode): void {
+  protected override codeBlock(node: CodeBlockNode): void {
     if (node.collapsable && node.collapsed) {
       this.pushBlockContentBegin();
       this.pushText(`[Collapsed: ${node.fileName}]`);
@@ -214,7 +214,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected codeGroup(node: CodeGroupNode): void {
+  protected override codeGroup(node: CodeGroupNode): void {
     for (const tab of node.tabs) {
       // Render header text
       const headerVisitor = new FixedWidthTextVisitor(this.width);
@@ -259,13 +259,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
   }
 
-  protected accordionGroup(node: AccordionGroupNode): void {
+  protected override accordionGroup(node: AccordionGroupNode): void {
     for (const tab of node.tabs) {
       this.accordionTab(tab);
     }
   }
 
-  protected accordionTab(node: AccordionTabNode): void {
+  protected override accordionTab(node: AccordionTabNode): void {
     if (node.open === false) {
       this.pushBlockContentBegin();
       const headerVisitor = new FixedWidthTextVisitor(this.width);
@@ -346,7 +346,7 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     this.pushBlockContentEnd();
   }
 
-  protected pill(node: PillNode): void {
+  protected override pill(node: PillNode): void {
     this.pushText("[");
     this.chooseChildren(node.content);
     this.pushText("]");
@@ -929,11 +929,13 @@ export class FixedWidthTextVisitor extends NodeVisitor {
 
     const visitor = new FixedWidthTextVisitor(this.width - 2);
     visitor.setState({ ...this.state, numericDepth: 0 });
+    const attribution: Node[] = node.author
+      ? [{ type: "text", text: node.author }, { type: "break" }, { type: "text", text: node.name }, { type: "break" }]
+      : [{ type: "text", text: node.name }, { type: "break" }];
     visitor.visit({
       type: "array",
       content: [
-        { type: "text", text: node.name },
-        { type: "break" },
+        ...attribution,
         { type: "break" },
         ...node.content,
       ],
