@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.3.1...text-doc-ir-v0.3.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* update document-ir to 0.5.4, add override modifiers and quote author ([#16](https://github.com/cendyne/text-doc-ir/issues/16)) ([fc1c362](https://github.com/cendyne/text-doc-ir/commit/fc1c3627559e629a660e6a81c989fda2fe4e90b2))
+
 ## [0.3.1](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.3.0...text-doc-ir-v0.3.1) (2026-02-23)
 
 
