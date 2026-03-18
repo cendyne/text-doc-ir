@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.3.2...text-doc-ir-v0.4.0) (2026-03-18)
+
+
+### Features
+
+* add admonition node support and update document-ir to 0.6.0 ([#18](https://github.com/cendyne/text-doc-ir/issues/18)) ([83df178](https://github.com/cendyne/text-doc-ir/commit/83df178918932d101ee015c5238344c47e7ba741))
+
 ## [0.3.2](https://github.com/cendyne/text-doc-ir/compare/text-doc-ir-v0.3.1...text-doc-ir-v0.3.2) (2026-03-13)
 
 
