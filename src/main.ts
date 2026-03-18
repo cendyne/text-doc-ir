@@ -2,6 +2,7 @@ import { encodeBase, LOWER_ALPHA, UPPER_ALPHA } from "./baseEncoder.ts";
 import type {
   AccordionGroupNode,
   AccordionTabNode,
+  AdmonitionNode,
   BadgeNode,
   BlockQuoteNode,
   BreakNode,
@@ -858,6 +859,46 @@ export class FixedWidthTextVisitor extends NodeVisitor {
     }
     visitor.restoreState(this);
 
+    this.pushBlockContentEnd();
+  }
+
+  protected override admonition(node: AdmonitionNode): void {
+    const label = node.admonitionType;
+    if (node.inline) {
+      if (node.title) {
+        const titleVisitor = new FixedWidthTextVisitor(this.width);
+        titleVisitor.setState({ ...this.state, numericDepth: 0 });
+        titleVisitor.visit({ type: "array", content: node.title });
+        titleVisitor.restoreState(this);
+        const titleText = titleVisitor.getLines().join(" ");
+        this.pushText("[" + titleText + ": ");
+      } else {
+        this.pushText("[" + label + ": ");
+      }
+      this.chooseChildren(node.content);
+      this.pushText("]");
+      return;
+    }
+    // Block mode: !!! type "Title"
+    this.pushBlockContentBegin();
+    if (node.title) {
+      const titleVisitor = new FixedWidthTextVisitor(this.width - 4);
+      titleVisitor.setState({ ...this.state, numericDepth: 0 });
+      titleVisitor.visit({ type: "array", content: node.title });
+      titleVisitor.restoreState(this);
+      const titleText = titleVisitor.getLines().join(" ");
+      this.pushText("!!! " + label + ' "' + titleText + '"');
+    } else {
+      this.pushText("!!! " + label);
+    }
+    const visitor = new FixedWidthTextVisitor(this.width - 4);
+    visitor.setState({ ...this.state, numericDepth: 0 });
+    visitor.visit({ type: "array", content: node.content });
+    for (const line of visitor.getLines()) {
+      this.pushEndOfLineIfAnyContent();
+      this.lines[Math.max(0, this.lines.length - 1)] = "    " + line;
+    }
+    visitor.restoreState(this);
     this.pushBlockContentEnd();
   }
 
