@@ -1281,6 +1281,138 @@ test("Note", () => {
   ]);
 });
 
+test("Admonition block with default label", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "admonition",
+    admonitionType: "note",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+          },
+        ],
+      },
+    ],
+  });
+  expect(visitor.getLines()).toEqual([
+    "!!! note",
+    "    Lorem ipsum dolor sit amet,",
+    "    consectetur adipiscing elit.",
+  ]);
+});
+
+test("Admonition block with custom title", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "admonition",
+    admonitionType: "tip",
+    title: [{ type: "text", text: "Pro Tip" }],
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "This is a helpful tip for you.",
+          },
+        ],
+      },
+    ],
+  });
+  expect(visitor.getLines()).toEqual([
+    '!!! tip "Pro Tip"',
+    "    This is a helpful tip for you.",
+  ]);
+});
+
+test("Admonition block danger type", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "admonition",
+    admonitionType: "danger",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Do not do this.",
+          },
+        ],
+      },
+    ],
+  });
+  expect(visitor.getLines()).toEqual([
+    "!!! danger",
+    "    Do not do this.",
+  ]);
+});
+
+test("Admonition inline with default label", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      { type: "text", text: "See " },
+      {
+        type: "admonition",
+        admonitionType: "info",
+        inline: true,
+        content: [{ type: "text", text: "this detail" }],
+      },
+      { type: "text", text: " here." },
+    ],
+  });
+  expect(visitor.getLines()).toEqual([
+    "See [info: this detail] here.",
+  ]);
+});
+
+test("Admonition inline with custom title", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "paragraph",
+    content: [
+      {
+        type: "admonition",
+        admonitionType: "warning",
+        inline: true,
+        title: [{ type: "text", text: "Caution" }],
+        content: [{ type: "text", text: "hot surface" }],
+      },
+    ],
+  });
+  expect(visitor.getLines()).toEqual([
+    "[Caution: hot surface]",
+  ]);
+});
+
+test("Admonition block collapsable and collapsed are ignored in text", () => {
+  const visitor = new FixedWidthTextVisitor(40);
+  visitor.visit({
+    type: "admonition",
+    admonitionType: "tip",
+    collapsable: true,
+    collapsed: true,
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Still visible in text." },
+        ],
+      },
+    ],
+  });
+  expect(visitor.getLines()).toEqual([
+    "!!! tip",
+    "    Still visible in text.",
+  ]);
+});
+
 test("Center", () => {
   const visitor = new FixedWidthTextVisitor(40);
   visitor.visit({
